@@ -1,0 +1,8 @@
+# Nunca subir dependencias instaladas ni credenciales locales.
+node_modules/
+.env
+.env.local
+*.local
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log

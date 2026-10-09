@@ -1,0 +1,73 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ---- Dializa: dependencias, secretos y artefactos de Firebase ----
+node_modules/
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+firestore-debug.log
+database-debug.log
+pubsub-debug.log
+*.local
+.runtimeconfig.json
+.env
+.env.*
+!.env.example
+# Cuentas de servicio y credenciales (nunca versionar)
+*-service-account*.json
+serviceAccount*.json
+*firebase-adminsdk*.json
+secrets.properties
+seed/*.local.*
+apis_*.txt
+credenciales*
+# google-services.json y GoogleService-Info.plist contienen identificadores
+# publicos del proyecto (no secretos). Punto 11.13: decision pendiente del
+# cliente. Para excluirlos, descomentar:
+# android/app/google-services.json
+# ios/Runner/GoogleService-Info.plist

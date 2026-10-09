@@ -1,0 +1,30 @@
+{
+  "rules": {
+    "ubicaciones": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.rol === 'admin' || data.child('pacienteAutorizado').val() === auth.uid)",
+        "lat": {
+          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer'",
+          ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+        },
+        "lng": {
+          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer'",
+          ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+        },
+        "timestamp": {
+          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer'",
+          ".validate": "newData.isNumber()"
+        },
+        "pacienteAutorizado": {
+          ".write": false
+        },
+        "viajeAutorizado": {
+          ".write": false
+        },
+        "autorizacionVersion": {
+          ".write": false
+        }
+      }
+    }
+  }
+}

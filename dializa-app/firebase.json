@@ -1,0 +1,66 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "dializa-app",
+          "appId": "1:703925846199:android:161516914a26340a9ecd32",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "dializa-app",
+          "configurations": {
+            "android": "1:703925846199:android:161516914a26340a9ecd32",
+            "ios": "1:703925846199:ios:45468f7ae4140bf79ecd32",
+            "macos": "1:703925846199:ios:45468f7ae4140bf79ecd32",
+            "web": "1:703925846199:web:b4b8171395358ee99ecd32",
+            "windows": "1:703925846199:web:dfeb0504a43513969ecd32"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local",
+        "scripts",
+        "test"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "database": {
+      "port": 9000
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true
+  }
+}
