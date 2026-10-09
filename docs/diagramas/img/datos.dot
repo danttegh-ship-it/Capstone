@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=TB, nodesep=0.3, ranksep=0.55, fontname="Arial", pad=0.1];
+  node  [shape=plaintext, fontname="Arial", fontsize=13];
+  edge  [fontname="Arial", fontsize=11, color="#555555", arrowsize=0.7];
+  usuarios [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#7F7FBF"><TR><TD BGCOLOR="#1F3864"><FONT COLOR="white"><B>usuarios/{uid}</B></FONT></TD></TR><TR><TD ALIGN="LEFT">rol: admin | chofer | paciente</TD></TR><TR><TD ALIGN="LEFT">nombre · activo</TD></TR><TR><TD ALIGN="LEFT">aprobado (chofer)</TD></TR><TR><TD ALIGN="LEFT">fcmToken</TD></TR></TABLE>>];
+  priv [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#7F7FBF"><TR><TD BGCOLOR="#1F3864"><FONT COLOR="white"><B>choferes_privado/{uid}</B></FONT></TD></TR><TR><TD ALIGN="LEFT">patente · licencia</TD></TR><TR><TD ALIGN="LEFT">modeloVehiculo · vehiculoAdaptado</TD></TR><TR><TD ALIGN="LEFT">disponible</TD></TR></TABLE>>];
+  resp [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#7F7FBF"><TR><TD BGCOLOR="#1F3864"><FONT COLOR="white"><B>respuestas_paciente/{uid}</B></FONT></TD></TR><TR><TD ALIGN="LEFT">asistira · comoLlega</TD></TR><TR><TD ALIGN="LEFT">necesitaMovilidad</TD></TR><TR><TD ALIGN="LEFT">direccion · fecha</TD></TR></TABLE>>];
+  viajes [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#7F7FBF"><TR><TD BGCOLOR="#1F3864"><FONT COLOR="white"><B>viajes/{pacienteId}</B></FONT></TD></TR><TR><TD ALIGN="LEFT">viajeId · choferId</TD></TR><TR><TD ALIGN="LEFT">fecha · hora · estado</TD></TR><TR><TD ALIGN="LEFT">historial[ ]</TD></TR><TR><TD ALIGN="LEFT"><I>solo la asignación vigente</I></TD></TR></TABLE>>];
+  sol [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#7F7FBF"><TR><TD BGCOLOR="#1F3864"><FONT COLOR="white"><B>solicitudes/{id}</B></FONT></TD></TR><TR><TD ALIGN="LEFT">pacienteId · conductorId</TD></TR><TR><TD ALIGN="LEFT">origen · destino · necesidades</TD></TR><TR><TD ALIGN="LEFT">estado · historial[ ]</TD></TR></TABLE>>];
+  hist [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#7F7FBF"><TR><TD BGCOLOR="#1F3864"><FONT COLOR="white"><B>historial_viajes/{viajeId}</B></FONT></TD></TR><TR><TD ALIGN="LEFT">cierre · estadoFinal</TD></TR><TR><TD ALIGN="LEFT">nombres desnormalizados</TD></TR><TR><TD ALIGN="LEFT">gps: conteo, primerTs, ultimoTs</TD></TR></TABLE>>];
+  gps [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#7F7FBF"><TR><TD BGCOLOR="#1F3864"><FONT COLOR="white"><B>gps_viajes/{viajeId}</B></FONT></TD></TR><TR><TD ALIGN="LEFT">muestras/{timestamp}</TD></TR><TR><TD ALIGN="LEFT">≤ 5000 por viaje</TD></TR></TABLE>>];
+  usuarios -> priv   [label="si rol = chofer"];
+  usuarios -> resp   [label="si rol = paciente"];
+  usuarios -> viajes [label="paciente (id del doc.)"];
+  usuarios -> sol    [label="paciente pide"];
+  viajes -> hist     [label="al cerrar o reasignar"];
+  sol -> hist        [label="al cerrar"];
+  hist -> gps        [label="mismo viajeId"];
+}

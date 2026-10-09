@@ -156,6 +156,12 @@ commit `567efdf` (salvo `android/app/google-services.json`, que el `.gitignore`
 excluye): solo cambiaron la documentación, los registros y el script de
 mutaciones.
 
+**Si el informe se modifica antes de publicar:** hacer un commit nuevo con el
+.docx corregido y mover la etiqueta **antes del primer `git push`**
+(`git tag -f -a entrega-fase2 -m "Version entregada"`). Una vez publicada, la
+etiqueta no se mueve: cualquier cambio posterior va en una etiqueta nueva
+(por ejemplo, `entrega-fase2-r1`).
+
 **Estado de publicación al preparar esta versión:** existe localmente. El
 último commit publicado en GitHub era `567efdf`. La publicación y el acceso del
 docente deben comprobarse después de hacer `git push`.

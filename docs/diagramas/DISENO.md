@@ -1,7 +1,9 @@
 # Diseño de ingeniería — Dializa App (corte semana 9)
 
 Los diagramas se construyeron a partir del código de `dializa-app/` (no de la
-propuesta). GitHub los dibuja directamente (Mermaid). Cada sección indica qué
+propuesta). GitHub los dibuja directamente (Mermaid). Las imágenes usadas en el
+informe están en [`img/`](img/); la Figura 2 del informe (`img/datos.png`) es una
+versión compacta del mismo modelo, dibujada con Graphviz desde `img/datos.dot`. Cada sección indica qué
 está **implementado** y qué está **propuesto**.
 
 ## 1. Arquitectura y responsabilidades
