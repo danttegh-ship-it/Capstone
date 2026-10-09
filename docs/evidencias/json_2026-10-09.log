@@ -1,0 +1,13 @@
+# Lectura de archivos JSON de configuracion - Dializa App
+# Fecha: 2026-10-09 11:52 -03
+# Directorio: dializa-app/
+# Comando: for f in firebase.json firestore.indexes.json database.rules.json package.json functions/package.json .firebaserc; do node -e "JSON.parse(require(\"fs\").readFileSync(process.argv[1],\"utf8\"))" "$f" && echo "OK  $f" || echo "ERROR  $f"; done
+# Alcance: solo comprueba que cada archivo sea JSON sintacticamente valido (parseable).
+#          NO comprueba que las reglas, indices o la configuracion sean correctos ni desplegables.
+
+OK  firebase.json
+OK  firestore.indexes.json
+OK  database.rules.json
+OK  package.json
+OK  functions/package.json
+OK  .firebaserc

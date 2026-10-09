@@ -1,0 +1,41 @@
+# Verificacion por mutaciones - Dializa App
+# Fecha: 2026-10-09T14:52:22.508Z
+# Node v22.22.0 en linux 6.18.44-fc-v80
+# Comando: node test/mutaciones/ejecutar-mutaciones.js (desde dializa-app/functions)
+
+M1 | viajes.js | pasan=72 fallan=5 | Se elimina la validacion de transiciones de estado
+     cambio: "if (!permitidas.includes(nuevoEstado))" -> "if (false)"
+     falla: C: cancelar desde 'en_viaje' es RECHAZADO por el servidor y no cambia nada
+     falla: C: cancelar desde 'finalizado' es RECHAZADO por el servidor y no cambia nada
+     falla: C: cancelar desde 'cancelado' es RECHAZADO por el servidor y no cambia nada
+     falla: C: dos cancelaciones concurrentes -- una gana, la otra falla, un solo archivo
+     falla: actualizarEstadoViaje: transiciones validas e invalidas
+M2 | viajes.js | pasan=76 fallan=1 | Se elimina la verificacion de que el chofer sea el asignado
+     cambio: "if (datos[campoConductor(coleccion)] !== uid)" -> "if (false)"
+     falla: C: un chofer ajeno no puede cancelar
+M3 | viajes.js | pasan=76 fallan=1 | Se permite reasignar un viaje en curso
+     cambio: "if (ESTADOS_NO_REASIGNABLES.includes(estadoPrevio))" -> "if (false)"
+     falla: asignarViaje: un viaje en curso (conductor_llego / en_viaje) NO se puede reasignar
+M4 | historial.js | pasan=76 fallan=1 | Se quita la idempotencia del archivo del historial
+     cambio: "if (ctx.archivoSnap.exists) return false;" -> ""
+     falla: historial: archivar es IDEMPOTENTE -- un segundo intento no duplica ni pisa el original
+M5 | gps.js | pasan=76 fallan=1 | Se quita el tope de muestras GPS por viaje
+     cambio: "if (conteoActual + nuevas.length > GPS_MAX_MUESTRAS_POR_VIAJE)" -> "if (false)"
+     falla: GPS: tope de 5000 muestras por viaje
+M6 | validaciones.js | pasan=75 fallan=2 | Se quita la ventana de tiempo de las muestras GPS
+     cambio: "if (t < ahoraMs - GPS_ANTIGUEDAD_MAXIMA_MS || t > ahoraMs + GPS_ADELANTO_MAXIMO_MS)" -> "if (false)"
+     falla: GPS: coordenadas invalidas, timestamps fuera de ventana, lotes vacios o gigantes se rechazan completos
+     falla: validarMuestrasGps: ordena, deduplica por timestamp y rechaza lotes invalidos completos
+M7 | cuentas.js | pasan=76 fallan=1 | Desactivar una cuenta ya no revoca los refresh tokens
+     cambio: "await auth.revokeRefreshTokens(objetivoUid);" -> ""
+     falla: D: desactivar -> Firestore activo:false, Auth disabled:true y refresh tokens revocados
+M8 | cuentas.js | pasan=76 fallan=1 | Se permite eliminar un chofer con viajes abiertos
+     cambio: "if (abiertos.length > 0)" -> "if (false)"
+     falla: eliminarCuenta de un chofer con viajes sin cerrar es RECHAZADA; con viajes cerrados procede
+M9 | autorizacionUbicacion.js | pasan=76 fallan=1 | Una reconciliacion tardia puede sobrescribir una mas nueva
+     cambio: "nodo.autorizacionVersion > version" -> "false"
+     falla: A: un evento TARDIO (reconciliacion mas vieja) no revoca ni concede sobre una asignacion mas nueva
+
+# Mutaciones detectadas: 9 de 9
+# Codigo original: pasan=77 fallan=0
+# Entorno de las pruebas: DOBLE de firebase-functions/v2/https (paquete real no instalado); Firestore/RTDB/Auth = dobles en memoria
