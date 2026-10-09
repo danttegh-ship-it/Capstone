@@ -28,7 +28,7 @@ flowchart TB
 
 | Componente | Responsabilidad | Estado |
 | --- | --- | --- |
-| App Flutter | Interfaz por rol; lee su rol en `usuarios/{uid}` y abre la pantalla que corresponde | Implementado (Android probado en emulador; ver Anexo A) |
+| App Flutter | Interfaz por rol; lee su rol en `usuarios/{uid}` y abre la pantalla que corresponde | Implementado; capturas en el emulador Android en el Anexo A, sin versión identificada |
 | Authentication | Identidad; custom claim `rol` usado por el servidor y por las reglas de RTDB | Implementado |
 | Cloud Functions | Toda escritura de negocio: cuentas, viajes, historial, GPS, autorización, notificaciones | Implementado; probado con dobles |
 | Firestore | Datos de negocio; el cliente solo escribe `respuestas_paciente/{uid}` | Implementado; reglas sin ejecutar en emulador |

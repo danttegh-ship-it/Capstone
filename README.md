@@ -10,7 +10,7 @@ Cloud Functions y Cloud Messaging).
 - **Integrantes:** Dantte García · Javiera Vidal
 - **Docente:** Mario Herrera Salas · Duoc UC, sede Maipú, sección 004D
 - **Nombre anterior:** Dialy-App (Fase 1)
-- **Versión evaluada en el Informe de Avance Fase 2:** etiqueta [`avance-fase2`](https://github.com/DantteG/Capstone/tree/avance-fase2) (corte semana 9)
+- **Versión entregada con el Informe de Avance Fase 2:** etiqueta [`entrega-fase2`](https://github.com/DantteG/Capstone/tree/entrega-fase2) (corte semana 9). Ver la sección «Versiones».
 
 > **Fases y etapas.** Las *Fases 1, 2 y 3* son las evaluaciones de la
 > asignatura. El desarrollo técnico se divide en *Etapas 0 a 6*. Los documentos
@@ -90,25 +90,28 @@ token FCM por sesión y el cierre de sesión; `main.dart`, `login_screen.dart`,
 
 ## Pruebas
 
-| Verificación | Estado | Detalle |
-| --- | --- | --- |
-| Pruebas unitarias del backend con dobles | ✅ **77/77** (repetidas el 2026-10-09) | `cd dializa-app/functions && npm test` · [registro](docs/evidencias/pruebas_unitarias_2026-10-09.log) |
-| Mutaciones del código | ✅ **9/9 detectadas** (2026-10-09) | [detalle](docs/evidencias/INFORME_PRUEBAS.md#3-verificación-por-mutaciones-e6-2026-10-09) |
-| Sintaxis de los `.js` y JSON de configuración | ✅ | `npm run check` |
-| Reglas de Firestore (18 casos) y RTDB (13 casos) | ❌ Escritas, no ejecutadas | Requieren Firebase Emulator Suite y Java |
-| Backend con paquetes reales de Firebase | ❌ Pendiente | Requiere acceso al registro npm |
-| `flutter analyze` / `flutter test` | ❌ Pendiente | Requiere Flutter SDK |
-| Integración de extremo a extremo | ❌ No escrita | Etapa 6 |
+| Verificación | Tipo | Estado | Detalle |
+| --- | --- | --- | --- |
+| Pruebas unitarias del backend | A: lógica de `functions/` con dobles en memoria de Firestore, RTDB y Auth, y sustituto de `firebase-functions` | ✅ **77/77** (2026-10-09) | `cd dializa-app/functions && npm test` · [registro](docs/evidencias/pruebas_unitarias_2026-10-09.log) |
+| Mutaciones del código | Comprobación de que las pruebas A detectan 9 errores elegidos | ✅ **9/9 detectadas** (2026-10-09) | `node test/mutaciones/ejecutar-mutaciones.js` · [registro](docs/evidencias/mutaciones_2026-10-09.log) |
+| Sintaxis JavaScript | `node --check` sobre 9 archivos | ✅ (2026-10-09) | `cd dializa-app/functions && npm run check` |
+| Lectura de JSON de configuración | Solo comprueba que los archivos sean JSON parseable | ✅ (2026-10-09) | [registro](docs/evidencias/json_2026-10-09.log) |
+| Las mismas 77 pruebas con `firebase-functions` real | B: Firestore, RTDB y Auth siguen siendo dobles | ❌ No ejecutada | Requiere `npm install` con acceso al registro npm |
+| Reglas de Firestore (18 casos) y RTDB (13 casos) | C: reglas reales en el Emulator Suite | ❌ Escritas, no ejecutadas | Requieren Java y Firebase CLI |
+| `flutter analyze`, `flutter test`, compilación | E: cliente | ❌ No ejecutadas | Requieren Flutter SDK |
+| Integración con emuladores y extremo a extremo | D y E | ❌ No escritas | Etapa 6 |
 
-Detalle completo: [`docs/evidencias/INFORME_PRUEBAS.md`](docs/evidencias/INFORME_PRUEBAS.md).
+Las ejecuciones del 2026-10-09 las hizo un asistente de IA durante la revisión
+del informe; el equipo aún no las ha repetido en sus equipos. Detalle, tipos de
+prueba y comandos pendientes: [`docs/evidencias/INFORME_PRUEBAS.md`](docs/evidencias/INFORME_PRUEBAS.md).
 
 ## Cómo ejecutar
 
 ```bash
 # Pruebas del backend (Node 20 o superior)
 cd dializa-app/functions
-npm install        # instala firebase-functions y firebase-admin reales
-npm test
+npm install        # instala firebase-functions y firebase-admin
+npm test           # 77 pruebas unitarias (tipo B: Firestore, RTDB y Auth siguen simulados)
 
 # Pruebas de reglas (requiere Java y Firebase CLI)
 cd ..
@@ -125,13 +128,37 @@ El archivo `android/app/google-services.json` no está en el repositorio (ver
 `.gitignore`); se descarga desde la consola de Firebase. El orden de despliegue
 de las reglas y funciones está en `dializa-app/docs/CONFIGURACION.md`, sección 4.
 
-## Decisiones abiertas
+## Seguridad y decisiones abiertas
 
-1. Aprobar las propuestas 1 a 7 de `DIFERENCIAS_Y_PROPUESTAS.md`. La **7** (quién
-   puede leer direcciones y tokens) debe resolverse antes de usar datos reales.
-   Ver también [`PERMISOS_Y_PRIVACIDAD.md`](docs/evidencias/PERMISOS_Y_PRIVACIDAD.md).
-2. Confirmar que la ubicación del chofer se comparta con el paciente desde
-   `conductor_en_camino` (y no desde la asignación).
+- Las **escrituras** de datos de negocio solo las hace el servidor; el cliente
+  solo escribe la respuesta de asistencia del paciente.
+- Las **lecturas** de `usuarios`, `viajes`, `solicitudes` y
+  `respuestas_paciente` siguen abiertas a cualquier usuario autenticado. Hay
+  una propuesta de reglas restringidas, **no aplicada ni probada**, en
+  [`PERMISOS_Y_PRIVACIDAD.md`](docs/evidencias/PERMISOS_Y_PRIVACIDAD.md).
+- La ubicación del chofer se comparte con el paciente desde
+  `conductor_en_camino` en los viajes asignados por el administrador y desde
+  `asignado` en las solicitudes. Está **implementado**; falta que el equipo lo
+  confirme como decisión de negocio.
+- Las propuestas 1 a 7 de `DIFERENCIAS_Y_PROPUESTAS.md` siguen pendientes de
+  decisión.
+
+## Versiones
+
+| Etiqueta | Commit | Qué contiene | Estado |
+| --- | --- | --- | --- |
+| `avance-fase2` | `62f7649` | Primera preparación de las evidencias (código descomprimido, README y documentos de `docs/`) | Solo local; nunca se publicó. Se conserva sin modificar |
+| `entrega-fase2` | Ver `git show entrega-fase2` | Versión entregada: documentación corregida, registros de pruebas y mutaciones, e informe final en `docs/informe/` | Ver estado de publicación abajo |
+
+El código de la aplicación (`dializa-app/lib`, `dializa-app/functions` sin
+`test/mutaciones`, reglas e índices) es el mismo en ambas etiquetas y en el
+commit `567efdf` (salvo `android/app/google-services.json`, que el `.gitignore`
+excluye): solo cambiaron la documentación, los registros y el script de
+mutaciones.
+
+**Estado de publicación al preparar esta versión:** existe localmente. El
+último commit publicado en GitHub era `567efdf`. La publicación y el acceso del
+docente deben comprobarse después de hacer `git push`.
 
 ## Uso de inteligencia artificial
 
