@@ -12,6 +12,7 @@ const llamar = async (e, fn, uid, rol, data) => {
     const snap = await e.db.doc(`${coleccion}/${data.id}`).get();
     if (snap.exists) data = { viajeId: require("../historial").viajeIdDe(coleccion, data.id, snap.data()).viajeId, estadoEsperado: snap.data().estado || "asignado", ...data };
   }
+  if ([e.cuentas.registrarTokenFcm,e.cuentas.eliminarTokenFcm].includes(fn)) data={sesionId:`sesion_${uid}_prueba`,...data};
   return fn.run(peticion(uid, rol, data));
 };
 async function entorno() {
@@ -92,10 +93,10 @@ test("D: solo un admin puede desactivar", async () => {
 test("E: registrarTokenFcm guarda el token y lo LIMPIA de otra cuenta que lo tuviera (cambio de usuario en el mismo telefono)", async () => {
   const e = await entorno();
   await llamar(e, e.cuentas.registrarTokenFcm, UID.paciente, "paciente", { token: "TOKEN-DEL-TELEFONO" });
-  assert.equal((await usuario(e, UID.paciente)).fcmToken, "TOKEN-DEL-TELEFONO");
+  assert.equal((await e.db.doc(`usuarios_privado/${UID.paciente}`).get()).data()?.fcmToken, "TOKEN-DEL-TELEFONO");
   await llamar(e, e.cuentas.registrarTokenFcm, UID.chofer, "chofer", { token: "TOKEN-DEL-TELEFONO" });
-  assert.equal((await usuario(e, UID.chofer)).fcmToken, "TOKEN-DEL-TELEFONO");
-  assert.equal((await usuario(e, UID.paciente)).fcmToken, null, "el usuario anterior ya no recibe en ese telefono");
+  assert.equal((await e.db.doc(`usuarios_privado/${UID.chofer}`).get()).data().fcmToken, "TOKEN-DEL-TELEFONO");
+  assert.equal((await usuario(e, UID.paciente)).fcmToken, undefined, "el usuario anterior ya no recibe en ese telefono");
 });
 
 test("E: registrarTokenFcm valida el token y exige sesion", async () => {
@@ -109,9 +110,9 @@ test("E: eliminarTokenFcm borra el token propio, y no toca el de otro dispositiv
   const e = await entorno();
   await llamar(e, e.cuentas.registrarTokenFcm, UID.paciente, "paciente", { token: "T-A" });
   await llamar(e, e.cuentas.eliminarTokenFcm, UID.paciente, "paciente", { token: "T-OTRO-DISPOSITIVO" });
-  assert.equal((await usuario(e, UID.paciente)).fcmToken, "T-A");
+  assert.equal((await e.db.doc(`usuarios_privado/${UID.paciente}`).get()).data()?.fcmToken, "T-A");
   await llamar(e, e.cuentas.eliminarTokenFcm, UID.paciente, "paciente", { token: "T-A" });
-  assert.equal((await usuario(e, UID.paciente)).fcmToken, null);
+  assert.equal((await e.db.doc(`usuarios_privado/${UID.paciente}`).get()).data()?.fcmToken, null);
 });
 
 // --- Bajas con viajes abiertos -------------------------------------------------------------------

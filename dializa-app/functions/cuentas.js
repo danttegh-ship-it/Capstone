@@ -260,47 +260,7 @@ function init(db, { autorizacion }, authInyectado = null) {
   // registrarTokenFcm: guarda/actualiza el token de notificaciones push
   // del usuario autenticado (puntos 9.5, 14.2).
   // ---------------------------------------------------------------------
-  const registrarTokenFcm = onCall(async (request) => {
-    if (!request.auth || !request.auth.uid) {
-      throw new HttpsError("unauthenticated", "Debes iniciar sesion.");
-    }
-    const uid = request.auth.uid;
-    const token = request.data && request.data.token;
-    if (!token || typeof token !== "string") {
-      throw new HttpsError("invalid-argument", "token invalido.");
-    }
-
-    if (token.length > 4096) throw new HttpsError("invalid-argument", "token invalido.");
-
-    // Higiene del token (correccion E): un mismo dispositivo puede cambiar
-    // de usuario. Si este token estaba asociado a OTRA cuenta, se limpia
-    // alli para que las notificaciones de esa cuenta no lleguen a quien
-    // ahora usa el telefono.
-    const otros = await db.collection("usuarios").where("fcmToken", "==", token).get();
-    for (const otro of otros.docs) {
-      if (otro.id !== uid) await otro.ref.update({ fcmToken: null });
-    }
-
-    await db.collection("usuarios").doc(uid).set({ fcmToken: token }, { merge: true });
-    return { ok: true };
-  });
-
-  // eliminarTokenFcm: se llama ANTES de cerrar sesion. Si el token guardado
-  // coincide con el del dispositivo, se borra; asi el siguiente usuario del
-  // telefono no deja al anterior recibiendo sus notificaciones.
-  const eliminarTokenFcm = onCall(async (request) => {
-    if (!request.auth || !request.auth.uid) {
-      throw new HttpsError("unauthenticated", "Debes iniciar sesion.");
-    }
-    const uid = request.auth.uid;
-    const token = request.data && request.data.token;
-    const ref = db.collection("usuarios").doc(uid);
-    const doc = await ref.get();
-    if (doc.exists && doc.data().fcmToken && (!token || doc.data().fcmToken === token)) {
-      await ref.update({ fcmToken: null });
-    }
-    return { ok: true };
-  });
+  const {registrarTokenFcm,eliminarTokenFcm}=require("./fcm").init(db);
 
   // ---------------------------------------------------------------------
   // actualizarDisponibilidad: el chofer activa/desactiva si esta

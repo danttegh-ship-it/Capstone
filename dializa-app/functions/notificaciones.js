@@ -18,8 +18,13 @@ const { getMessaging } = require("firebase-admin/messaging");
 function init(db) {
   async function enviarNotificacion(uidDestino, titulo, cuerpo, datos = {}) {
     const usuarioDoc = await db.collection("usuarios").doc(uidDestino).get();
-    const token = usuarioDoc.exists ? usuarioDoc.data().fcmToken : null;
-    if (!token) return; // el usuario no tiene token registrado todavia
+    if(!usuarioDoc.exists || !require("./operacionesCuenta").perfilOperativo(usuarioDoc.data())) return;
+    const privado=await db.collection("usuarios_privado").doc(uidDestino).get();
+    if(!privado.exists) return;
+    const {fcmToken:token,tokenKey,sesionId}=privado.data();
+    if(!token || !tokenKey || !sesionId) return;
+    const [propietario,sesion]=await Promise.all([db.collection("fcmTokens").doc(tokenKey).get(),db.collection("fcmSesiones").doc(sesionId).get()]);
+    if(!propietario.exists || propietario.data().uid!==uidDestino || propietario.data().sesionId!==sesionId || !sesion.exists || sesion.data().revocada) return;
 
     await getMessaging()
       .send({

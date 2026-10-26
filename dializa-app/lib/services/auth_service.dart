@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'fcm_session_controller.dart';
 
 /// Funciones de autenticacion que dializa-app no tenia todavia, portadas
 /// desde daily-app/android/.../AuthRepository.kt:
@@ -15,10 +16,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 /// Se agrupan aca en vez de dejarlas sueltas en login_screen.dart, para
 /// que cualquier pantalla pueda reutilizarlas.
 class AuthService {
-  AuthService()
-      : _functions = FirebaseFunctions.instanceFor(region: 'southamerica-east1');
-
-  final FirebaseFunctions _functions;
+  AuthService();
 
   /// Envia el correo de verificacion al usuario que acaba de iniciar
   /// sesion. No bloquea el login si falla (igual que en daily-app).
@@ -40,95 +38,38 @@ class AuthService {
     await FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
   }
 
-  /// Registra (o actualiza) el token FCM del usuario autenticado contra
-  /// la Cloud Function `registrarTokenFcm`. Se llama despues de un login
-  /// exitoso y, de nuevo, cada vez que Firebase renueva el token.
-  /// Nunca debe bloquear el login si falla.
-  Future<void> registrarTokenFcmActual() async {
-    try {
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token == null) return;
-      final callable = _functions.httpsCallable('registrarTokenFcm');
-      await callable.call<Map<String, dynamic>>({'token': token});
-    } catch (_) {
-      // Silencioso: sin notificaciones push la app sigue funcionando.
-    }
-  }
-
-  // ---------------------------------------------------------------------
-  // Gestion del token FCM por sesion (correccion E)
-  // ---------------------------------------------------------------------
-
   static StreamSubscription<User?>? _suscripcionSesion;
   static StreamSubscription<String>? _suscripcionToken;
+  static FcmSessionController? _fcm;
 
-  /// Arranca (UNA sola vez; llamadas repetidas no hacen nada) la gestion
-  /// del token FCM atada al estado de autenticacion:
-  ///   - hay usuario (login nuevo O sesion restaurada al abrir la app):
-  ///     registra el token y se suscribe a `onTokenRefresh`;
-  ///   - no hay usuario: cancela la suscripcion al token.
-  /// Al cambiar de usuario, la suscripcion anterior se cancela antes de
-  /// crear la nueva, asi un token renovado nunca se asocia al usuario
-  /// previo ni se duplican listeners. Llamar desde `main()` despues de
-  /// `Firebase.initializeApp`.
+  static FcmSessionController get _controller => _fcm ??= FcmSessionController(
+    currentUid: () => FirebaseAuth.instance.currentUser?.uid,
+    getToken: () => FirebaseMessaging.instance.getToken(),
+    register: (uid, session, token) async {
+      if (FirebaseAuth.instance.currentUser?.uid != uid) return;
+      await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+        .httpsCallable('registrarTokenFcm').call<void>({'token': token, 'sesionId': session});
+    },
+    revoke: (session) async {
+      await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+        .httpsCallable('eliminarTokenFcm').call<void>({'sesionId': session});
+    },
+    deleteToken: () => FirebaseMessaging.instance.deleteToken(),
+  );
+
+  Future<void> registrarTokenFcmActual() => _controller.refresh();
+
   static void iniciarGestionFcmPorSesion() {
     if (_suscripcionSesion != null) return;
-    _suscripcionSesion =
-        FirebaseAuth.instance.authStateChanges().listen((usuario) {
-      _cancelarSuscripcionToken();
-      if (usuario == null) return;
-
-      final uidSuscrito = usuario.uid;
-      _suscripcionToken =
-          FirebaseMessaging.instance.onTokenRefresh.listen((token) {
-        // Defensa extra: solo registra si la sesion sigue siendo la misma.
-        if (FirebaseAuth.instance.currentUser?.uid != uidSuscrito) return;
-        unawaited(AuthService()._registrarToken(token));
-      }, onError: (_) {});
-
-      unawaited(AuthService().registrarTokenFcmActual());
+    _suscripcionToken = FirebaseMessaging.instance.onTokenRefresh.listen(
+      (token) => unawaited(_controller.refresh(token)), onError: (Object _) {});
+    _suscripcionSesion = FirebaseAuth.instance.authStateChanges().listen((user) {
+      _controller.sessionChanged(user?.uid);
     });
   }
 
-  static void _cancelarSuscripcionToken() {
-    _suscripcionToken?.cancel();
-    _suscripcionToken = null;
-  }
-
-  Future<void> _registrarToken(String token) async {
-    try {
-      final callable = _functions.httpsCallable('registrarTokenFcm');
-      await callable.call<Map<String, dynamic>>({'token': token});
-    } catch (_) {
-      // Silencioso: sin notificaciones push la app sigue funcionando.
-    }
-  }
-
-  /// Cierra la sesion de forma que el siguiente usuario de este telefono
-  /// no herede las notificaciones del anterior:
-  ///   1. deja de escuchar renovaciones del token;
-  ///   2. pide al servidor borrar el token de ESTE usuario (aun autenticado);
-  ///   3. invalida el token en el dispositivo (se genera uno nuevo despues);
-  ///   4. cierra la sesion.
-  /// Los pasos 2 y 3 no bloquean el cierre de sesion si fallan (por
-  /// ejemplo sin conexion): el servidor tambien limpia el token cuando
-  /// otro usuario registra el mismo.
   Future<void> cerrarSesion() async {
-    _cancelarSuscripcionToken();
-    try {
-      final token = await FirebaseMessaging.instance
-          .getToken()
-          .timeout(const Duration(seconds: 5));
-      await _functions
-          .httpsCallable('eliminarTokenFcm')
-          .call<Map<String, dynamic>>({'token': token})
-          .timeout(const Duration(seconds: 5));
-      await FirebaseMessaging.instance
-          .deleteToken()
-          .timeout(const Duration(seconds: 5));
-    } catch (_) {
-      // Ver comentario del metodo.
-    }
+    await _controller.close();
     await FirebaseAuth.instance.signOut();
   }
 }
