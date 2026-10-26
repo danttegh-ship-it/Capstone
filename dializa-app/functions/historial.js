@@ -26,6 +26,8 @@
 // NOMBRES DESNORMALIZADOS: se copian pacienteNombre/conductorNombre al
 // archivar para que borrar una cuenta despues no borre la evidencia.
 
+const { HttpsError } = require("firebase-functions/v2/https");
+
 const ESTADOS_FINALES = ["finalizado", "cancelado"];
 
 function campoConductor(coleccion) {
@@ -133,3 +135,15 @@ module.exports = {
   escribirArchivo,
   agregarHistorial,
 };
+
+// La ruta viajes/{pacienteId} se reutiliza: nunca inferir la instancia de
+// una orden pendiente a partir del documento que haya ahora en esa ruta.
+function exigirInstancia(coleccion, id, datos, esperado) {
+  if (typeof esperado !== "string" || !esperado || esperado.length > 256 || esperado.includes("/")) {
+    throw new HttpsError("invalid-argument", "viajeId de la instancia observada es obligatorio.");
+  }
+  if (viajeIdDe(coleccion, id, datos).viajeId !== esperado) {
+    throw new HttpsError("failed-precondition", "El viaje fue reemplazado. Actualiza la pantalla.");
+  }
+}
+module.exports.exigirInstancia = exigirInstancia;

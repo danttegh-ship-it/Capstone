@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
+import '../services/identidad_viaje.dart';
 import 'registro_conductor_screen.dart';
 import '../config/feature_flags.dart';
 import '../services/geoapify_service.dart';
@@ -275,6 +276,7 @@ class _TarjetaViaje extends StatefulWidget {
 }
 
 class _TarjetaViajeState extends State<_TarjetaViaje> {
+  bool _enviando = false;
   final _geoapifyService = GeoapifyService();
   final _functions = FirebaseFunctions.instanceFor(region: 'southamerica-east1');
   final _firestore = FirebaseFirestore.instance;
@@ -521,7 +523,10 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: _firestore.collection('viajes').doc(widget.pacienteId).snapshots(),
       builder: (context, snapshot) {
-        final estado = snapshot.data?.data()?['estado'] as String? ?? 'asignado';
+        final datos = snapshot.data?.data();
+        if (datos == null) return const SizedBox.shrink();
+        final estado = datos['estado'] as String? ?? 'asignado';
+        final viajeId = identidadViaje(widget.pacienteId, datos);
 
         const siguienteEstado = {
           'asignado': 'conductor_en_camino',
@@ -553,13 +558,14 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
             if (proximo != null)
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _avanzarEstado(proximo),
+                  onPressed: _enviando ? null : () => _avanzarEstado(proximo, viajeId, estado),
                   child: Text(etiquetaBoton[estado] ?? 'Avanzar'),
                 ),
               ),
             const SizedBox(width: 8),
+            if (const ['asignado', 'conductor_en_camino', 'conductor_llego'].contains(estado))
             OutlinedButton(
-              onPressed: _cancelarAsignacion,
+              onPressed: _enviando ? null : () => _cancelarAsignacion(viajeId, estado),
               style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Cancelar'),
             ),
@@ -569,23 +575,31 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
     );
   }
 
-  Future<void> _avanzarEstado(String nuevoEstado) async {
+  Future<void> _avanzarEstado(String nuevoEstado, String viajeId, String estadoEsperado) async {
+    setState(() => _enviando = true);
     try {
       await _functions.httpsCallable('actualizarEstadoViaje').call<Map<String, dynamic>>({
         'coleccion': 'viajes',
         'id': widget.pacienteId,
         'nuevoEstado': nuevoEstado,
+        'viajeId': viajeId,
+        'estadoEsperado': estadoEsperado,
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $e')));
       }
+    } finally {
+      if (mounted) setState(() => _enviando = false);
     }
   }
 
-  Future<void> _cancelarAsignacion() async {
+  Future<void> _cancelarAsignacion(String viajeId, String estadoEsperado) async {
+    setState(() => _enviando = true);
     try {
       await _functions.httpsCallable('cancelarAsignacionConductor').call<Map<String, dynamic>>({
+        'viajeId': viajeId,
+        'estadoEsperado': estadoEsperado,
         'coleccion': 'viajes',
         'id': widget.pacienteId,
       });
@@ -593,6 +607,8 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo cancelar: $e')));
       }
+    } finally {
+      if (mounted) setState(() => _enviando = false);
     }
   }
 }

@@ -13,7 +13,15 @@ async function entorno(opts) {
   await sembrarUsuarios(e.db, e.auth, opts);
   return e;
 }
-const llamar = (fn, uid, rol, data) => fn.run(peticion(uid, rol, data));
+// Completar la observacion del cliente en las fixtures de escenarios previos.
+const llamar = async (e, fn, uid, rol, data) => {
+  if ([e.viajes.actualizarEstadoViaje, e.viajes.cancelarAsignacionConductor, e.gps.registrarMuestrasGps].includes(fn)) {
+    const coleccion = data.coleccion || "solicitudes";
+    const snap = await e.db.doc(`${coleccion}/${data.id}`).get();
+    if (snap.exists) data = { viajeId: require("../historial").viajeIdDe(coleccion, data.id, snap.data()).viajeId, estadoEsperado: snap.data().estado || "asignado", ...data };
+  }
+  return fn.run(peticion(uid, rol, data));
+};
 const leer = async (db, ruta) => (await db.doc(ruta).get()).data();
 
 async function crearViaje(e, estado, { coleccion = "viajes", choferId = UID.chofer, extra = {} } = {}) {
@@ -34,7 +42,7 @@ async function crearViaje(e, estado, { coleccion = "viajes", choferId = UID.chof
 
 test("B: crearSolicitudViaje persiste origen, destino y necesidades validados (y conserva notas/direccionTexto)", async () => {
   const e = await entorno();
-  const r = await llamar(e.viajes.crearSolicitudViaje, UID.paciente, "paciente", {
+  const r = await llamar(e, e.viajes.crearSolicitudViaje, UID.paciente, "paciente", {
     origen: PUNTO_A, destino: PUNTO_B, notas: "Timbre roto", direccionTexto: "Casa",
     necesidades: { sillaRuedas: true, acompanante: false, observaciones: "Escalera", contactoEmergencia: "+56 9 1111 2222" },
   });
@@ -62,7 +70,7 @@ test("B: rechaza origen/destino ausentes, coordenadas invalidas y textos demasia
     { origen: PUNTO_A, destino: PUNTO_B, necesidades: { contactoEmergencia: "a".repeat(151) } },
   ];
   for (const data of intentos) {
-    const err = await error(llamar(e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data));
+    const err = await error(llamar(e, e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data));
     assert.equal(err && err.code, "invalid-argument", JSON.stringify(data).slice(0, 80));
   }
   assert.equal((await e.db.collection("solicitudes").get()).size, 0, "no debe crearse nada");
@@ -71,18 +79,18 @@ test("B: rechaza origen/destino ausentes, coordenadas invalidas y textos demasia
 test("B: rate limit -- la segunda creacion inmediata es rechazada; otro paciente no se ve afectado", async () => {
   const e = await entorno();
   const data = { origen: PUNTO_A, destino: PUNTO_B };
-  await llamar(e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data);
-  const err = await error(llamar(e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data));
+  await llamar(e, e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data);
+  const err = await error(llamar(e, e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data));
   assert.equal(err.code, "resource-exhausted");
-  await llamar(e.viajes.crearSolicitudViaje, UID.paciente2, "paciente", data);
+  await llamar(e, e.viajes.crearSolicitudViaje, UID.paciente2, "paciente", data);
 });
 
 test("B: solo un paciente activo puede crear solicitudes", async () => {
   const e = await entorno();
   const data = { origen: PUNTO_A, destino: PUNTO_B };
-  assert.equal((await error(llamar(e.viajes.crearSolicitudViaje, UID.chofer, "chofer", data))).code, "permission-denied");
+  assert.equal((await error(llamar(e, e.viajes.crearSolicitudViaje, UID.chofer, "chofer", data))).code, "permission-denied");
   await e.db.collection("usuarios").doc(UID.paciente).update({ activo: false });
-  assert.equal((await error(llamar(e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data))).code, "permission-denied");
+  assert.equal((await error(llamar(e, e.viajes.crearSolicitudViaje, UID.paciente, "paciente", data))).code, "permission-denied");
 });
 
 // --- C: cancelarAsignacionConductor ------------------------------------------------------
@@ -92,7 +100,7 @@ for (const estado of ["asignado", "conductor_en_camino", "conductor_llego"]) {
     test(`C: cancelar desde '${estado}' en ${coleccion} es valido, archiva y deja al chofer no disponible`, async () => {
       const e = await entorno();
       const id = await crearViaje(e, estado, { coleccion });
-      const r = await llamar(e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion, id });
+      const r = await llamar(e, e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion, id });
       assert.equal(r.ok, true);
       assert.equal((await leer(e.db, `${coleccion}/${id}`)).estado, "cancelado");
       const archivos = await e.db.collection("historial_viajes").get();
@@ -109,7 +117,7 @@ for (const estado of ["en_viaje", "finalizado", "cancelado"]) {
     const e = await entorno();
     const id = await crearViaje(e, estado);
     const antes = await leer(e.db, `viajes/${id}`);
-    const err = await error(llamar(e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id }));
+    const err = await error(llamar(e, e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id }));
     assert.equal(err.code, "failed-precondition");
     assert.deepEqual(await leer(e.db, `viajes/${id}`), antes);
     assert.equal((await e.db.collection("historial_viajes").get()).size, 0);
@@ -120,7 +128,7 @@ for (const estado of ["en_viaje", "finalizado", "cancelado"]) {
 test("C: un chofer ajeno no puede cancelar", async () => {
   const e = await entorno();
   const id = await crearViaje(e, "asignado");
-  const err = await error(llamar(e.viajes.cancelarAsignacionConductor, UID.chofer2, "chofer", { coleccion: "viajes", id }));
+  const err = await error(llamar(e, e.viajes.cancelarAsignacionConductor, UID.chofer2, "chofer", { coleccion: "viajes", id }));
   assert.equal(err.code, "permission-denied");
   assert.equal((await leer(e.db, `viajes/${id}`)).estado, "asignado");
 });
@@ -128,7 +136,7 @@ test("C: un chofer ajeno no puede cancelar", async () => {
 test("C: dos cancelaciones concurrentes -- una gana, la otra falla, un solo archivo", async () => {
   const e = await entorno();
   const id = await crearViaje(e, "conductor_en_camino");
-  const req = () => llamar(e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id });
+  const req = () => llamar(e, e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id });
   const res = await Promise.allSettled([req(), req()]);
   assert.equal(res.filter((r) => r.status === "fulfilled").length, 1);
   assert.equal(res.find((r) => r.status === "rejected").reason.code, "failed-precondition");
@@ -140,7 +148,7 @@ test("C: dos cancelaciones concurrentes -- una gana, la otra falla, un solo arch
 test("actualizarEstadoViaje: transiciones validas e invalidas", async () => {
   const e = await entorno();
   const id = await crearViaje(e, "asignado");
-  const paso = (nuevoEstado) => llamar(e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id, nuevoEstado });
+  const paso = (nuevoEstado) => llamar(e, e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id, nuevoEstado });
   assert.equal((await error(paso("en_viaje"))).code, "failed-precondition"); // salta estados
   await paso("conductor_en_camino");
   await paso("conductor_llego");
@@ -156,15 +164,15 @@ test("rechazarSolicitud: solo para quien YA acepto (asignado); una pendiente NO 
   const e = await entorno();
   const id = await crearViaje(e, "solicitado", { coleccion: "solicitudes", choferId: null });
   // pendiente: nadie la tiene -> el chofer no puede "rechazarla"
-  const err = await error(llamar(e.viajes.rechazarSolicitud, UID.chofer, "chofer", { solicitudId: id }));
+  const err = await error(llamar(e, e.viajes.rechazarSolicitud, UID.chofer, "chofer", { solicitudId: id }));
   assert.equal(err.code, "failed-precondition");
   assert.equal((await leer(e.db, `solicitudes/${id}`)).estado, "solicitado");
   assert.deepEqual((await leer(e.db, `solicitudes/${id}`)).rechazadoPor, []);
 
   // aceptada -> si puede arrepentirse y vuelve a 'solicitado'
-  await llamar(e.viajes.aceptarSolicitud, UID.chofer, "chofer", { solicitudId: id });
+  await llamar(e, e.viajes.aceptarSolicitud, UID.chofer, "chofer", { solicitudId: id });
   assert.equal((await leer(e.db, `solicitudes/${id}`)).estado, "asignado");
-  await llamar(e.viajes.rechazarSolicitud, UID.chofer, "chofer", { solicitudId: id, motivo: "Auto en taller" });
+  await llamar(e, e.viajes.rechazarSolicitud, UID.chofer, "chofer", { solicitudId: id, motivo: "Auto en taller" });
   const s = await leer(e.db, `solicitudes/${id}`);
   assert.equal(s.estado, "solicitado");
   assert.equal(s.conductorId, null);
@@ -175,8 +183,8 @@ test("aceptarSolicitud: dos choferes a la vez -- solo uno la obtiene", async () 
   const e = await entorno();
   const id = await crearViaje(e, "solicitado", { coleccion: "solicitudes", choferId: null });
   const res = await Promise.allSettled([
-    llamar(e.viajes.aceptarSolicitud, UID.chofer, "chofer", { solicitudId: id }),
-    llamar(e.viajes.aceptarSolicitud, UID.chofer2, "chofer", { solicitudId: id }),
+    llamar(e, e.viajes.aceptarSolicitud, UID.chofer, "chofer", { solicitudId: id }),
+    llamar(e, e.viajes.aceptarSolicitud, UID.chofer2, "chofer", { solicitudId: id }),
   ]);
   assert.equal(res.filter((r) => r.status === "fulfilled").length, 1);
   const s = await leer(e.db, `solicitudes/${id}`);
@@ -189,7 +197,7 @@ test("historial: finalizar archiva con nombres, estados y resumen GPS; el viaje 
   const e = await entorno();
   const id = await crearViaje(e, "en_viaje");
   await e.db.collection("gps_viajes").doc("viaje_fijo_0001").set({ conteo: 7, primerTs: 1000, ultimoTs: 9000 });
-  await llamar(e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id, nuevoEstado: "finalizado" });
+  await llamar(e, e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id, nuevoEstado: "finalizado" });
   const a = await leer(e.db, "historial_viajes/viaje_fijo_0001");
   assert.equal(a.pacienteId, UID.paciente);
   assert.equal(a.pacienteNombre, "Paciente Uno");
@@ -206,7 +214,7 @@ test("historial: finalizar archiva con nombres, estados y resumen GPS; el viaje 
 test("historial: archivar es IDEMPOTENTE -- un segundo intento no duplica ni pisa el original", async () => {
   const e = await entorno();
   const id = await crearViaje(e, "conductor_llego");
-  await llamar(e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id });
+  await llamar(e, e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id });
   const primero = await leer(e.db, "historial_viajes/viaje_fijo_0001");
 
   // Reintento "a mano" del archivado (lo que haria un trigger o reintento duplicado)
@@ -224,8 +232,8 @@ test("historial: archivar es IDEMPOTENTE -- un segundo intento no duplica ni pis
 test("historial: viaje legado (sin viajeId ni estado) se archiva con id determinista y esLegacy", async () => {
   const e = await entorno();
   await e.db.collection("viajes").doc(UID.paciente).set({ choferId: UID.chofer, choferNombre: "Chofer Uno", fecha: "2026-09-01", hora: "08:00" });
-  await llamar(e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: "conductor_en_camino" });
-  await llamar(e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente });
+  await llamar(e, e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: "conductor_en_camino" });
+  await llamar(e, e.viajes.cancelarAsignacionConductor, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente });
   const archivos = await e.db.collection("historial_viajes").get();
   assert.equal(archivos.size, 1);
   const a = archivos.docs[0].data();
@@ -236,7 +244,7 @@ test("historial: viaje legado (sin viajeId ni estado) se archiva con id determin
 // --- asignarViaje --------------------------------------------------------------------------
 
 const asignar = (e, extra = {}, uid = UID.admin, rol = "admin") =>
-  llamar(e.viajes.asignarViaje, uid, rol, { pacienteId: UID.paciente, choferId: UID.chofer, fecha: "2026-10-12", hora: "10:15", ...extra });
+  llamar(e, e.viajes.asignarViaje, uid, rol, { pacienteId: UID.paciente, choferId: UID.chofer, fecha: "2026-10-12", hora: "10:15", ...extra });
 
 test("asignarViaje: crea el viaje con viajeId generado, nombres resueltos en servidor y sin archivo previo", async () => {
   const e = await entorno();
@@ -267,7 +275,7 @@ test("asignarViaje: tras finalizar, el nuevo .set no pierde nada (el finalizado 
   const e = await entorno();
   const r1 = await asignar(e);
   for (const nuevoEstado of ["conductor_en_camino", "conductor_llego", "en_viaje", "finalizado"]) {
-    await llamar(e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado });
+    await llamar(e, e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado });
   }
   const antes = await leer(e.db, `historial_viajes/${r1.viajeId}`);
   assert.equal(antes.cierre, "finalizado");

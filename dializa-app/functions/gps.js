@@ -39,7 +39,7 @@ const {
   GPS_MAX_MUESTRAS_POR_VIAJE,
 } = require("./validaciones");
 const { exigirLimiteTasa } = require("./rateLimit");
-const { campoConductor, viajeIdDe } = require("./historial");
+const { campoConductor, viajeIdDe, exigirInstancia } = require("./historial");
 
 const ESTADOS_CON_GPS = ["conductor_en_camino", "conductor_llego", "en_viaje"];
 
@@ -68,6 +68,7 @@ function init(db, cuentas) {
       if (datos[campoConductor(coleccion)] !== uid) {
         throw new HttpsError("permission-denied", "Este viaje no esta asignado a ti.");
       }
+      exigirInstancia(coleccion, id, datos, request.data.viajeId);
       const estado = datos.estado || "asignado";
       if (!ESTADOS_CON_GPS.includes(estado)) {
         throw new HttpsError("failed-precondition", `No se registra GPS en estado '${estado}'.`);

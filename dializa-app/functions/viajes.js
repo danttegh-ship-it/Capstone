@@ -39,6 +39,7 @@ const {
   leerContextoArchivo,
   escribirArchivo,
   agregarHistorial,
+  exigirInstancia,
 } = require("./historial");
 
 // Transiciones permitidas, controladas por quien las dispara.
@@ -182,7 +183,7 @@ function init(db, cuentas, { autorizacion }) {
   // dueno y transicion, escribe el nuevo estado y, si queda final,
   // archiva en historial_viajes y libera al chofer.
   // ---------------------------------------------------------------------
-  async function cambiarEstadoComoChofer({ uid, coleccion, id, nuevoEstado }) {
+  async function cambiarEstadoComoChofer({ uid, coleccion, id, nuevoEstado, viajeId, estadoEsperado }) {
     const ref = db.collection(coleccion).doc(id);
 
     await db.runTransaction(async (tx) => {
@@ -194,7 +195,10 @@ function init(db, cuentas, { autorizacion }) {
         throw new HttpsError("permission-denied", "Este viaje no esta asignado a ti.");
       }
 
+      exigirInstancia(coleccion, id, datos, viajeId);
       const estadoActual = datos.estado || "asignado";
+      if (typeof estadoEsperado !== "string") throw new HttpsError("invalid-argument", "estadoEsperado es obligatorio.");
+      if (estadoActual !== estadoEsperado) throw new HttpsError("failed-precondition", "El estado cambio. Actualiza la pantalla.");
       const permitidas = TRANSICIONES_CONDUCTOR[estadoActual] || [];
       if (!permitidas.includes(nuevoEstado)) {
         throw new HttpsError("failed-precondition", `No se puede pasar de '${estadoActual}' a '${nuevoEstado}'.`);
@@ -230,7 +234,7 @@ function init(db, cuentas, { autorizacion }) {
     const coleccion = coleccionValida((request.data && request.data.coleccion) || "solicitudes");
     const id = validarUid(request.data && request.data.id);
 
-    await cambiarEstadoComoChofer({ uid, coleccion, id, nuevoEstado: "cancelado" });
+    await cambiarEstadoComoChofer({ uid, coleccion, id, nuevoEstado: "cancelado", viajeId: request.data.viajeId, estadoEsperado: request.data.estadoEsperado });
 
     await registrarAuditoria(db, { accion: "cancelarAsignacion", actorUid: uid, detalle: { coleccion, id } });
 
@@ -248,7 +252,7 @@ function init(db, cuentas, { autorizacion }) {
     const id = validarUid(request.data && request.data.id);
     const nuevoEstado = validarEstado(request.data && request.data.nuevoEstado);
 
-    await cambiarEstadoComoChofer({ uid, coleccion, id, nuevoEstado });
+    await cambiarEstadoComoChofer({ uid, coleccion, id, nuevoEstado, viajeId: request.data.viajeId, estadoEsperado: request.data.estadoEsperado });
 
     const autorizacionSincronizada = await autorizacion.reconciliarSeguro([uid]);
     return { ok: true, autorizacionSincronizada };

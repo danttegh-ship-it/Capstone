@@ -4,23 +4,31 @@ const assert = require("node:assert/strict");
 const { montar, sembrarUsuarios, UID } = require("./helpers/montaje");
 const { peticion, error } = require("./helpers/memoria");
 
-const llamar = (fn, uid, rol, data) => fn.run(peticion(uid, rol, data));
+// Completar la observacion del cliente en las fixtures de escenarios previos.
+const llamar = async (e, fn, uid, rol, data) => {
+  if ([e.viajes.actualizarEstadoViaje, e.viajes.cancelarAsignacionConductor, e.gps.registrarMuestrasGps].includes(fn)) {
+    const coleccion = data.coleccion || "solicitudes";
+    const snap = await e.db.doc(`${coleccion}/${data.id}`).get();
+    if (snap.exists) data = { viajeId: require("../historial").viajeIdDe(coleccion, data.id, snap.data()).viajeId, estadoEsperado: snap.data().estado || "asignado", ...data };
+  }
+  return fn.run(peticion(uid, rol, data));
+};
 
 async function entorno(estadoViaje = "conductor_en_camino") {
   const e = montar();
   await sembrarUsuarios(e.db, e.auth);
-  const { viajeId } = await llamar(e.viajes.asignarViaje, UID.admin, "admin", { pacienteId: UID.paciente, choferId: UID.chofer, fecha: "2026-10-12", hora: "10:15" });
+  const { viajeId } = await llamar(e, e.viajes.asignarViaje, UID.admin, "admin", { pacienteId: UID.paciente, choferId: UID.chofer, fecha: "2026-10-12", hora: "10:15" });
   const orden = ["conductor_en_camino", "conductor_llego", "en_viaje", "finalizado"];
   if (estadoViaje !== "asignado") {
     for (const s of orden.slice(0, orden.indexOf(estadoViaje) + 1)) {
-      await llamar(e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: s });
+      await llamar(e, e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: s });
     }
   }
   return { e, viajeId };
 }
 const muestra = (i, extra = {}) => ({ lat: -33.45 + i * 0.0001, lng: -70.66, timestampMs: Date.now() - 10000 + i, ...extra });
 const gps = (e, muestras, uid = UID.chofer, id = UID.paciente, coleccion = "viajes") =>
-  llamar(e.gps.registrarMuestrasGps, uid, "chofer", { coleccion, id, muestras });
+  llamar(e, e.gps.registrarMuestrasGps, uid, "chofer", { coleccion, id, muestras });
 const muestras = async (e, viajeId) => (await e.db.collection("gps_viajes").doc(viajeId).collection("muestras").get()).docs.map((d) => d.data());
 
 test("GPS: guarda muestras en la subcoleccion (no en el documento), con fase y fuente, y actualiza el resumen", async () => {
@@ -65,7 +73,7 @@ test("GPS: un chofer AJENO no puede registrar muestras en un viaje que no es suy
 test("GPS: roles distintos de chofer (paciente, admin) son rechazados", async () => {
   const { e } = await entorno();
   for (const [uid, rol] of [[UID.paciente, "paciente"], [UID.admin, "admin"]]) {
-    const err = await error(llamar(e.gps.registrarMuestrasGps, uid, rol, { coleccion: "viajes", id: UID.paciente, muestras: [muestra(1)] }));
+    const err = await error(llamar(e, e.gps.registrarMuestrasGps, uid, rol, { coleccion: "viajes", id: UID.paciente, muestras: [muestra(1)] }));
     assert.equal(err.code, "permission-denied");
   }
 });
@@ -78,7 +86,7 @@ test("GPS: en estado 'asignado' (aun no sale) no se registran muestras", async (
 test("GPS: despues de finalizar NO se aceptan muestras (viaje cerrado)", async () => {
   const { e, viajeId } = await entorno("en_viaje");
   await gps(e, [muestra(1)]);
-  await llamar(e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: "finalizado" });
+  await llamar(e, e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: "finalizado" });
   assert.equal((await error(gps(e, [muestra(2)]))).code, "failed-precondition");
   assert.equal((await muestras(e, viajeId)).length, 1);
   // y el archivo recibio el resumen GPS
@@ -89,7 +97,7 @@ test("GPS: carrera con el cierre -- finalizar y registrar a la vez: las muestras
   const { e, viajeId } = await entorno("en_viaje");
   const res = await Promise.allSettled([
     gps(e, [muestra(1), muestra(2)]),
-    llamar(e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: "finalizado" }),
+    llamar(e, e.viajes.actualizarEstadoViaje, UID.chofer, "chofer", { coleccion: "viajes", id: UID.paciente, nuevoEstado: "finalizado" }),
   ]);
   assert.equal(res[1].status, "fulfilled");
   const aceptadas = (await muestras(e, viajeId)).length;

@@ -6,7 +6,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "node --test test/validaciones.test.js test/validaciones-fase1.test.js test/viajes.test.js test/autorizacion.test.js test/gps.test.js test/cuentas.test.js test/seed.test.js",
+    "test": "node --test test/*.test.js",
     "check": "node --check index.js && node --check cuentas.js && node --check viajes.js && node --check historial.js && node --check gps.js && node --check autorizacionUbicacion.js && node --check notificaciones.js && node --check scripts/seed-cuentas.js && node --check scripts/seed-lib.js",
     "seed": "node scripts/seed-cuentas.js",
     "serve": "firebase emulators:start --only functions",
