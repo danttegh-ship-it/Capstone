@@ -261,7 +261,7 @@ const GPS_ADELANTO_MAXIMO_MS = 60 * 1000;
  * ordenado por tiempo. Rechaza el lote COMPLETO si alguna muestra es
  * invalida (no se acepta "lo que sirva", para que el cliente se entere).
  */
-function validarMuestrasGps(muestras, ahoraMs = Date.now()) {
+function validarMuestrasGps(muestras, ahoraMs = Date.now(), antiguedadMaximaMs = GPS_ANTIGUEDAD_MAXIMA_MS) {
   if (!Array.isArray(muestras) || muestras.length < 1 || muestras.length > GPS_MAX_MUESTRAS_POR_LLAMADA) {
     throw new HttpsError(
       "invalid-argument",
@@ -279,7 +279,7 @@ function validarMuestrasGps(muestras, ahoraMs = Date.now()) {
     if (!Number.isInteger(t)) {
       throw new HttpsError("invalid-argument", "timestampMs debe ser un entero (milisegundos epoch).");
     }
-    if (t < ahoraMs - GPS_ANTIGUEDAD_MAXIMA_MS || t > ahoraMs + GPS_ADELANTO_MAXIMO_MS) {
+    if (t < ahoraMs - antiguedadMaximaMs || t > ahoraMs + GPS_ADELANTO_MAXIMO_MS) {
       throw new HttpsError("invalid-argument", "timestampMs fuera de la ventana permitida.");
     }
     if (vistos.has(t)) continue;

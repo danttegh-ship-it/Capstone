@@ -40,7 +40,7 @@ dependencies:
   # Agregados para llamar a las Cloud Functions que hacen de proxy hacia
   # Geoapify (geocoding, routing, map matching) - la app nunca llama a
   # Geoapify directo ni conoce las API keys.
-  cloud_functions: ^5.1.3
+  cloud_functions: ^6.5.1
   # Mapa basado en OpenStreetMap: no requiere ninguna API key (a
   # diferencia de Google Maps SDK, que necesitaria una clave propia que
   # todavia no se ha generado para este proyecto). Sirve para mostrar el
@@ -50,6 +50,7 @@ dependencies:
   # FCM (notificaciones push) y geolocator (ubicacion del chofer, punto
   # 8.7/12.8/12.9), ambos puertos de funcionalidad que ya tenia daily-app.
   firebase_messaging: ^16.0.3
+  shared_preferences: ^2.3.2
   geolocator: ^13.0.2
   firebase_database: ^12.0.3
   permission_handler: ^11.3.1

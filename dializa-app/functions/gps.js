@@ -17,7 +17,7 @@
 //
 // VOLUMEN: <= 50 muestras por llamada, <= 5000 por viaje (a 1 muestra cada
 // 5 s son ~7 h de viaje), 30 llamadas por minuto por chofer, y solo
-// timestamps en [ahora-15 min, ahora+60 s] (evita retroceder o inventar
+// timestamps en [ahora-8 h, ahora+60 s] (evita retroceder o inventar
 // recorridos).
 //
 // CARRERA CON EL CIERRE: la escritura ocurre en una transaccion que LEE el
@@ -54,7 +54,7 @@ function init(db, cuentas) {
       throw new HttpsError("invalid-argument", "coleccion debe ser 'viajes' o 'solicitudes'.");
     }
     const id = validarUid(request.data && request.data.id);
-    const muestras = validarMuestrasGps(request.data && request.data.muestras);
+    const muestras = validarMuestrasGps(request.data && request.data.muestras, Date.now(), 8 * 60 * 60 * 1000);
 
     await exigirLimiteTasa(db, uid, "registrarMuestrasGps", 60000, 30);
 
@@ -74,6 +74,8 @@ function init(db, cuentas) {
         throw new HttpsError("failed-precondition", `No se registra GPS en estado '${estado}'.`);
       }
 
+      const inicio=Date.parse(datos.gpsIniciadoEn || "");
+      if(Number.isFinite(inicio) && muestras.some(m=>m.t<inicio-60000)) throw new HttpsError("invalid-argument","La muestra es anterior al inicio del recorrido.");
       const { viajeId } = viajeIdDe(coleccion, id, datos);
       const resumenRef = db.collection("gps_viajes").doc(viajeId);
       const refsMuestras = muestras.map((m) => resumenRef.collection("muestras").doc(String(m.t)));

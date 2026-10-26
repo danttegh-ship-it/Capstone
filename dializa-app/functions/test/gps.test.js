@@ -116,7 +116,7 @@ test("GPS: coordenadas invalidas, timestamps fuera de ventana, lotes vacios o gi
   const malos = [
     [muestra(1), { lat: 91, lng: 0, timestampMs: ahora }],
     [{ lat: "a", lng: 0, timestampMs: ahora }],
-    [{ lat: -33, lng: -70, timestampMs: ahora - 16 * 60 * 1000 }],
+    [{ lat: -33, lng: -70, timestampMs: ahora - 9 * 60 * 60 * 1000 }],
     [{ lat: -33, lng: -70, timestampMs: ahora + 5 * 60 * 1000 }],
     [{ lat: -33, lng: -70, timestampMs: "ahora" }],
     [{ lat: -33, lng: -70, timestampMs: 1.5 }],
@@ -154,4 +154,12 @@ test("GPS: tambien funciona en solicitudes bajo demanda", async () => {
   const r = await gps(e, [muestra(1)], UID.chofer, "sol_gps_00001", "solicitudes");
   assert.equal(r.viajeId, "sol_gps_00001");
   assert.equal((await muestras(e, "sol_gps_00001")).length, 1);
+});
+
+test("H08: lote offline de la misma instancia se conserva hasta ocho horas",async()=>{
+ const {e,viajeId}=await entorno("en_viaje");
+ await e.db.doc(`viajes/${UID.paciente}`).update({gpsIniciadoEn:new Date(Date.now()-7200000).toISOString()});
+ const r=await gps(e,[muestra(1,{timestampMs:Date.now()-3600000})]);
+ assert.equal(r.guardadas,1);assert.equal((await muestras(e,viajeId)).length,1);
+ await assert.rejects(gps(e,[muestra(1,{timestampMs:Date.now()-10800000})]),{code:"invalid-argument"});
 });

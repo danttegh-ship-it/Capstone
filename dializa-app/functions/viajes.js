@@ -224,8 +224,9 @@ function init(db, cuentas, { autorizacion }) {
         ...datos,
         estado: nuevoEstado,
         historial: agregarHistorial(datos.historial, nuevoEstado, uid),
+        ...(nuevoEstado === "en_viaje" ? {gpsIniciadoEn: new Date().toISOString()} : {}),
       };
-      tx.update(ref, { estado: datosFinales.estado, historial: datosFinales.historial });
+      tx.update(ref, { estado: datosFinales.estado, historial: datosFinales.historial, ...(datosFinales.gpsIniciadoEn ? {gpsIniciadoEn:datosFinales.gpsIniciadoEn} : {}) });
 
       if (cierra) {
         escribirArchivo(tx, ctx, { coleccion, id, datosFinales, cierre: nuevoEstado });

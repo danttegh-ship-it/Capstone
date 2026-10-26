@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'fcm_session_controller.dart';
+import 'seguimiento_gps.dart';
 
 /// Funciones de autenticacion que dializa-app no tenia todavia, portadas
 /// desde daily-app/android/.../AuthRepository.kt:
@@ -48,11 +50,13 @@ class AuthService {
     register: (uid, session, token) async {
       if (FirebaseAuth.instance.currentUser?.uid != uid) return;
       await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
-        .httpsCallable('registrarTokenFcm').call<void>({'token': token, 'sesionId': session});
+          .httpsCallable('registrarTokenFcm')
+          .call<void>({'token': token, 'sesionId': session});
     },
     revoke: (session) async {
       await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
-        .httpsCallable('eliminarTokenFcm').call<void>({'sesionId': session});
+          .httpsCallable('eliminarTokenFcm')
+          .call<void>({'sesionId': session});
     },
     deleteToken: () => FirebaseMessaging.instance.deleteToken(),
   );
@@ -61,14 +65,19 @@ class AuthService {
 
   static void iniciarGestionFcmPorSesion() {
     if (_suscripcionSesion != null) return;
-    _suscripcionToken = FirebaseMessaging.instance.onTokenRefresh.listen(
-      (token) => unawaited(_controller.refresh(token)), onError: (Object _) {});
-    _suscripcionSesion = FirebaseAuth.instance.authStateChanges().listen((user) {
+    _suscripcionToken ??= FirebaseMessaging.instance.onTokenRefresh.listen(
+      (token) => unawaited(_controller.refresh(token)),
+      onError: (Object _) {},
+    );
+    _suscripcionSesion = FirebaseAuth.instance.authStateChanges().listen((
+      user,
+    ) {
       _controller.sessionChanged(user?.uid);
     });
   }
 
   Future<void> cerrarSesion() async {
+    await SeguimientoGps.detenerTodos();
     await _controller.close();
     await FirebaseAuth.instance.signOut();
   }

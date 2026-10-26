@@ -1,16 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/identidad_viaje.dart';
+import '../services/seguimiento_gps.dart';
 import 'registro_conductor_screen.dart';
 import '../config/feature_flags.dart';
 import '../services/geoapify_service.dart';
 import '../services/ubicacion_actual.dart';
 import '../services/ubicacion_repository.dart';
 import '../widgets/mapa_ruta.dart';
+import '../widgets/controles_viaje.dart';
 
 /// Panel del chofer.
 ///
@@ -31,8 +36,18 @@ class ChoferHome extends StatefulWidget {
 }
 
 class _ChoferHomeState extends State<ChoferHome> {
+  SeguimientoGps? _seguimiento;
+  @override
+  void dispose() {
+    final tracker = _seguimiento;
+    if (tracker != null) unawaited(tracker.cerrar());
+    super.dispose();
+  }
+
   final _firestore = FirebaseFirestore.instance;
-  final _functions = FirebaseFunctions.instanceFor(region: 'southamerica-east1');
+  final _functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
 
   Future<void> _cerrarSesion() async {
     await AuthService().cerrarSesion();
@@ -50,13 +65,15 @@ class _ChoferHomeState extends State<ChoferHome> {
 
   Future<void> _cambiarDisponibilidad(bool disponible) async {
     try {
-      await _functions.httpsCallable('actualizarDisponibilidad').call<Map<String, dynamic>>({
-        'disponible': disponible,
-      });
+      await _functions
+          .httpsCallable('actualizarDisponibilidad')
+          .call<Map<String, dynamic>>({'disponible': disponible});
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo actualizar tu disponibilidad: $e')),
+          SnackBar(
+            content: Text('No se pudo actualizar tu disponibilidad: $e'),
+          ),
         );
       }
     }
@@ -71,11 +88,14 @@ class _ChoferHomeState extends State<ChoferHome> {
     final resultado = await obtenerUbicacionActual();
 
     if (resultado is UbicacionExito) {
-      await _ubicacionRepository.actualizarUbicacion(lat: resultado.lat, lng: resultado.lng);
+      await _ubicacionRepository.actualizarUbicacion(
+        lat: resultado.lat,
+        lng: resultado.lng,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ubicación compartida.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Ubicación compartida.')));
       }
     } else if (mounted) {
       final mensaje = switch (resultado) {
@@ -85,7 +105,8 @@ class _ChoferHomeState extends State<ChoferHome> {
         UbicacionError(mensaje: final m) => 'Error: $m',
         _ => 'No se pudo obtener tu ubicación.',
       };
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(mensaje)));
     }
 
     if (mounted) setState(() => _compartiendoUbicacion = false);
@@ -101,15 +122,21 @@ class _ChoferHomeState extends State<ChoferHome> {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: _firestore.collection('usuarios').doc(uidChofer).snapshots(),
       builder: (context, snapshotUsuario) {
-        final aprobado = snapshotUsuario.data?.data()?['aprobado'] as bool? ?? false;
+        final aprobado =
+            snapshotUsuario.data?.data()?['aprobado'] as bool? ?? false;
 
         if (!snapshotUsuario.hasData) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (!aprobado) {
           return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            future: _firestore.collection('choferes_privado').doc(uidChofer).get(),
+            future: _firestore
+                .collection('choferes_privado')
+                .doc(uidChofer)
+                .get(),
             builder: (context, snapshotPrivado) {
               final yaEnviado = snapshotPrivado.data?.exists ?? false;
               return Scaffold(
@@ -131,6 +158,22 @@ class _ChoferHomeState extends State<ChoferHome> {
           );
         }
 
+        if (snapshotUsuario.data?.data()?['activo'] != true) {
+          unawaited(SeguimientoGps.detenerTodos());
+          return Scaffold(
+            appBar: AppBar(title: const Text('Cuenta desactivada')),
+            body: Center(
+              child: TextButton(
+                onPressed: _cerrarSesion,
+                child: const Text('Cerrar sesion'),
+              ),
+            ),
+          );
+        }
+        if (_seguimiento == null) {
+          _seguimiento = SeguimientoGps(uidChofer);
+          unawaited(_seguimiento!.iniciar());
+        }
         return Scaffold(
           appBar: AppBar(
             title: const Text('Panel de Chofer'),
@@ -145,6 +188,14 @@ class _ChoferHomeState extends State<ChoferHome> {
           body: Column(
             children: [
               _buildTogleDisponibilidad(uidChofer),
+              if (_seguimiento != null)
+                AnimatedBuilder(
+                  animation: _seguimiento!,
+                  builder: (context, _) => Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(_seguimiento!.estado),
+                  ),
+                ),
               Expanded(child: _buildListaViajes(uidChofer)),
             ],
           ),
@@ -157,9 +208,13 @@ class _ChoferHomeState extends State<ChoferHome> {
   /// recibir viajes.
   Widget _buildTogleDisponibilidad(String uidChofer) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: _firestore.collection('choferes_privado').doc(uidChofer).snapshots(),
+      stream: _firestore
+          .collection('choferes_privado')
+          .doc(uidChofer)
+          .snapshots(),
       builder: (context, snapshot) {
-        final disponible = snapshot.data?.data()?['disponible'] as bool? ?? false;
+        final disponible =
+            snapshot.data?.data()?['disponible'] as bool? ?? false;
         return Container(
           color: disponible ? Colors.green.shade50 : Colors.grey.shade200,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -167,16 +222,24 @@ class _ChoferHomeState extends State<ChoferHome> {
             children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(disponible ? 'Disponible para viajes' : 'No disponible'),
+                title: Text(
+                  disponible ? 'Disponible para viajes' : 'No disponible',
+                ),
                 value: disponible,
                 onChanged: _cambiarDisponibilidad,
               ),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: _compartiendoUbicacion ? null : _compartirUbicacionAhora,
+                  onPressed: _compartiendoUbicacion
+                      ? null
+                      : _compartirUbicacionAhora,
                   icon: _compartiendoUbicacion
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.my_location),
                   label: const Text('Compartir mi ubicación ahora'),
                 ),
@@ -203,7 +266,14 @@ class _ChoferHomeState extends State<ChoferHome> {
           return Center(child: Text('Error al cargar: ${snapshot.error}'));
         }
 
-        final viajes = snapshot.data?.docs ?? [];
+        final viajes = (snapshot.data?.docs ?? [])
+            .where(
+              (doc) => !const [
+                'finalizado',
+                'cancelado',
+              ].contains(doc.data()['estado']),
+            )
+            .toList();
 
         if (viajes.isEmpty) {
           return const Center(
@@ -217,7 +287,8 @@ class _ChoferHomeState extends State<ChoferHome> {
 
         // Ordena por fecha y hora (texto en formato AAAA-MM-DD y HH:mm,
         // que se ordenan correctamente como texto).
-        final viajesOrdenados = [...viajes]..sort((a, b) {
+        final viajesOrdenados = [...viajes]
+          ..sort((a, b) {
             final fechaA = '${a.data()['fecha']} ${a.data()['hora']}';
             final fechaB = '${b.data()['fecha']} ${b.data()['hora']}';
             return fechaA.compareTo(fechaB);
@@ -253,7 +324,10 @@ class _ChoferHomeState extends State<ChoferHome> {
 /// chofer (RealtimeLocationRepository.kt / RTDB de daily-app). Reemplazar
 /// por la ubicacion real del centro, o por el GPS del chofer una vez que
 /// esa parte se porte.
-const PuntoMapa _ubicacionCentroDialisis = PuntoMapa(-33.4489, -70.6693); // Plaza de Armas, Santiago (placeholder)
+const PuntoMapa _ubicacionCentroDialisis = PuntoMapa(
+  -33.4489,
+  -70.6693,
+); // Plaza de Armas, Santiago (placeholder)
 
 /// Tarjeta que muestra un viaje asignado: nombre del paciente, hora, y
 /// si necesita ayuda de movilidad o que lo busquen. Si el paciente cargo
@@ -278,7 +352,9 @@ class _TarjetaViaje extends StatefulWidget {
 class _TarjetaViajeState extends State<_TarjetaViaje> {
   bool _enviando = false;
   final _geoapifyService = GeoapifyService();
-  final _functions = FirebaseFunctions.instanceFor(region: 'southamerica-east1');
+  final _functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
   final _firestore = FirebaseFirestore.instance;
 
   bool _calculandoRuta = false;
@@ -344,7 +420,9 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
     ];
 
     try {
-      final puntosAjustados = await _geoapifyService.ajustarRutaGps(puntos: puntosDePrueba);
+      final puntosAjustados = await _geoapifyService.ajustarRutaGps(
+        puntos: puntosDePrueba,
+      );
       setState(() {
         _probandoMapMatching = false;
         _resultadoMapMatching =
@@ -389,10 +467,12 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
   }
 
   Widget _buildDatosPaciente() {
-    return FutureBuilder<
-        List<DocumentSnapshot<Map<String, dynamic>>>>(
+    return FutureBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
       future: Future.wait([
-        FirebaseFirestore.instance.collection('usuarios').doc(widget.pacienteId).get(),
+        FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(widget.pacienteId)
+            .get(),
         FirebaseFirestore.instance
             .collection('respuestas_paciente')
             .doc(widget.pacienteId)
@@ -415,11 +495,15 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
         final necesitaMovilidad =
             (respuestaDoc.data()?['necesitaMovilidad'] as bool?) ?? false;
         final comoLlega = respuestaDoc.data()?['comoLlega'] as String?;
-        final direccion = respuestaDoc.data()?['direccion'] as Map<String, dynamic>?;
+        final direccion =
+            respuestaDoc.data()?['direccion'] as Map<String, dynamic>?;
 
         PuntoMapa? destino;
         if (direccion != null) {
-          destino = PuntoMapa((direccion['lat'] as num).toDouble(), (direccion['lng'] as num).toDouble());
+          destino = PuntoMapa(
+            (direccion['lat'] as num).toDouble(),
+            (direccion['lng'] as num).toDouble(),
+          );
         }
 
         return Column(
@@ -460,7 +544,9 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
             if (destino != null && FeatureFlags.geoapifyHabilitado) ...[
               if (_ruta == null)
                 OutlinedButton.icon(
-                  onPressed: _calculandoRuta ? null : () => _calcularRuta(destino!),
+                  onPressed: _calculandoRuta
+                      ? null
+                      : () => _calcularRuta(destino!),
                   icon: _calculandoRuta
                       ? const SizedBox(
                           width: 16,
@@ -471,7 +557,11 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
                   label: const Text('Calcular ruta hasta el paciente'),
                 )
               else ...[
-                MapaRuta(origen: _ubicacionCentroDialisis, destino: destino, ruta: _ruta),
+                MapaRuta(
+                  origen: _ubicacionCentroDialisis,
+                  destino: destino,
+                  ruta: _ruta,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Distancia: ${_ruta!.distanciaLegible} · Tiempo estimado: ${_ruta!.duracionLegible}',
@@ -495,7 +585,9 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
                     child: Text(
                       _resultadoMapMatching!,
                       style: TextStyle(
-                        color: _resultadoMapMatching!.startsWith('Error') ? Colors.red : Colors.green,
+                        color: _resultadoMapMatching!.startsWith('Error')
+                            ? Colors.red
+                            : Colors.green,
                       ),
                     ),
                   ),
@@ -503,7 +595,10 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
               if (_errorRuta != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(_errorRuta!, style: const TextStyle(color: Colors.red)),
+                  child: Text(
+                    _errorRuta!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
             ],
             const SizedBox(height: 10),
@@ -521,91 +616,73 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
   /// la que ya existía en dializa-app.
   Widget _buildProgresoViaje() {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: _firestore.collection('viajes').doc(widget.pacienteId).snapshots(),
+      stream: _firestore
+          .collection('viajes')
+          .doc(widget.pacienteId)
+          .snapshots(),
       builder: (context, snapshot) {
         final datos = snapshot.data?.data();
         if (datos == null) return const SizedBox.shrink();
         final estado = datos['estado'] as String? ?? 'asignado';
         final viajeId = identidadViaje(widget.pacienteId, datos);
 
-        const siguienteEstado = {
-          'asignado': 'conductor_en_camino',
-          'conductor_en_camino': 'conductor_llego',
-          'conductor_llego': 'en_viaje',
-          'en_viaje': 'finalizado',
-        };
-        const etiquetaBoton = {
-          'asignado': 'Voy en camino',
-          'conductor_en_camino': 'Llegué',
-          'conductor_llego': 'Iniciar viaje',
-          'en_viaje': 'Finalizar viaje',
-        };
-
-        if (estado == 'finalizado' || estado == 'cancelado') {
-          return Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              estado == 'finalizado' ? 'Viaje finalizado.' : 'Viaje cancelado.',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          );
-        }
-
-        final proximo = siguienteEstado[estado];
-
-        return Row(
-          children: [
-            if (proximo != null)
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _enviando ? null : () => _avanzarEstado(proximo, viajeId, estado),
-                  child: Text(etiquetaBoton[estado] ?? 'Avanzar'),
-                ),
-              ),
-            const SizedBox(width: 8),
-            if (const ['asignado', 'conductor_en_camino', 'conductor_llego'].contains(estado))
-            OutlinedButton(
-              onPressed: _enviando ? null : () => _cancelarAsignacion(viajeId, estado),
-              style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Cancelar'),
-            ),
-          ],
+        return ControlesViaje(
+          estado: estado,
+          enviando: _enviando,
+          onAvanzar: (nuevo) => _avanzarEstado(nuevo, viajeId, estado),
+          onCancelar: () => _cancelarAsignacion(viajeId, estado),
         );
       },
     );
   }
 
-  Future<void> _avanzarEstado(String nuevoEstado, String viajeId, String estadoEsperado) async {
+  Future<void> _avanzarEstado(
+    String nuevoEstado,
+    String viajeId,
+    String estadoEsperado,
+  ) async {
     setState(() => _enviando = true);
     try {
-      await _functions.httpsCallable('actualizarEstadoViaje').call<Map<String, dynamic>>({
-        'coleccion': 'viajes',
-        'id': widget.pacienteId,
-        'nuevoEstado': nuevoEstado,
-        'viajeId': viajeId,
-        'estadoEsperado': estadoEsperado,
-      });
+      if (nuevoEstado == 'finalizado')
+        await SeguimientoGps.prepararCierre(viajeId);
+      await _functions
+          .httpsCallable('actualizarEstadoViaje')
+          .call<Map<String, dynamic>>({
+            'coleccion': 'viajes',
+            'id': widget.pacienteId,
+            'nuevoEstado': nuevoEstado,
+            'viajeId': viajeId,
+            'estadoEsperado': estadoEsperado,
+          });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('No se pudo actualizar: $e')));
+        unawaited(SeguimientoGps.reanudarTodos().catchError((Object _) {}));
       }
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
   }
 
-  Future<void> _cancelarAsignacion(String viajeId, String estadoEsperado) async {
+  Future<void> _cancelarAsignacion(
+    String viajeId,
+    String estadoEsperado,
+  ) async {
     setState(() => _enviando = true);
     try {
-      await _functions.httpsCallable('cancelarAsignacionConductor').call<Map<String, dynamic>>({
-        'viajeId': viajeId,
-        'estadoEsperado': estadoEsperado,
-        'coleccion': 'viajes',
-        'id': widget.pacienteId,
-      });
+      await _functions
+          .httpsCallable('cancelarAsignacionConductor')
+          .call<Map<String, dynamic>>({
+            'viajeId': viajeId,
+            'estadoEsperado': estadoEsperado,
+            'coleccion': 'viajes',
+            'id': widget.pacienteId,
+          });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo cancelar: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('No se pudo cancelar: $e')));
       }
     } finally {
       if (mounted) setState(() => _enviando = false);
