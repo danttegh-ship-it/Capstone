@@ -170,6 +170,7 @@ function init(db, { autorizacion }, authInyectado = null) {
     });
 
     await sincronizarClaimRol(uid, "chofer");
+    await autorizacion.sincronizarCuenta(uid);
 
     return { ok: true, mensaje: "Registro enviado. Un administrador debe aprobarlo." };
   });
@@ -191,6 +192,7 @@ function init(db, { autorizacion }, authInyectado = null) {
       tx.update(ref,{aprobado:true});
     });
     await sincronizarClaimRol(conductorUid, "chofer");
+    await autorizacion.sincronizarCuenta(conductorUid);
 
     await registrarAuditoria(db, {
       accion: "aprobarConductor",
@@ -211,8 +213,10 @@ function init(db, { autorizacion }, authInyectado = null) {
     if(typeof request.data?.activo!=="boolean") throw new HttpsError("invalid-argument","activo debe ser booleano.");
     const activo=request.data.activo;
     const ctx=await operaciones.preparar(actorUid,objetivoUid,activo?"activar":"desactivar");
+    await autorizacion.sincronizarCuenta(objetivoUid);
     const authActualizado=await operaciones.aplicarAuth(objetivoUid,activo);
     await operaciones.finalizar(ctx,activo && authActualizado);
+    await autorizacion.sincronizarCuenta(objetivoUid);
     await registrarAuditoria(db,{accion:activo?"activarCuenta":"desactivarCuenta",actorUid,objetivoUid,detalle:{authActualizado}});
     return {ok:true,authActualizado};
   });
@@ -221,6 +225,7 @@ function init(db, { autorizacion }, authInyectado = null) {
   // conserva hasta que archivado, Auth y limpieza hayan terminado.
   async function darDeBaja(actorUid, objetivoUid) {
     const ctx=await operaciones.preparar(actorUid,objetivoUid,"eliminar");
+    await autorizacion.sincronizarCuenta(objetivoUid);
     const choferes=new Set();
     if(ctx.datos.rol==="paciente") {
       const refs=[db.collection("viajes").doc(objetivoUid)];
@@ -247,6 +252,7 @@ function init(db, { autorizacion }, authInyectado = null) {
     const authActualizado=await operaciones.aplicarAuth(objetivoUid,false,true);
     await db.collection("choferes_privado").doc(objetivoUid).delete();
     await operaciones.finalizar(ctx,false,true);
+    await autorizacion.sincronizarCuenta(objetivoUid);
     await registrarAuditoria(db,{accion:"eliminarCuenta",actorUid,objetivoUid,detalle:{authActualizado}});
     const autorizacionSincronizada=await autorizacion.reconciliarSeguro([...choferes]);
     return {ok:true,authActualizado,autorizacionSincronizada};
@@ -296,6 +302,7 @@ function init(db, { autorizacion }, authInyectado = null) {
       creadoEn: new Date().toISOString(),
     });
     await sincronizarClaimRol(uidPaciente, "paciente");
+    await autorizacion.sincronizarCuenta(uidPaciente);
 
     await registrarAuditoria(db, { accion: "agregarPaciente", actorUid, objetivoUid: uidPaciente });
 

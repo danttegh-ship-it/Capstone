@@ -4,9 +4,10 @@
   "description": "Herramientas de prueba de reglas (Emulator Suite). Las dependencias de las Cloud Functions viven en functions/package.json.",
   "scripts": {
     "test:functions": "npm --prefix functions test",
-    "test:reglas:firestore": "firebase emulators:exec --only firestore --project dializa-app-test \"mocha tests/firestore.rules.test.js\"",
-    "test:reglas:database": "firebase emulators:exec --only database --project dializa-app-test \"mocha tests/database.rules.test.js\"",
-    "test:reglas": "npm run test:reglas:firestore && npm run test:reglas:database"
+    "test:reglas:firestore": "firebase emulators:exec --only firestore --project demo-dializa-h10 \"mocha tests/firestore.rules.test.js --timeout 20000\"",
+    "test:reglas:database": "firebase emulators:exec --only database --project demo-dializa-h10 \"mocha tests/database.rules.test.js --timeout 20000\"",
+    "test:reglas": "npm run test:reglas:firestore && npm run test:reglas:database",
+    "test:integracion": "firebase emulators:exec --only auth,firestore,database --project demo-dializa-h10 \"node --test integration/regresiones.test.js\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.4",

@@ -2,17 +2,17 @@
   "rules": {
     "ubicaciones": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.rol === 'admin' || data.child('pacienteAutorizado').val() === auth.uid)",
+        ".read": "auth != null && (root.child('cuentasAutorizadas').child(auth.uid).child('activo').val() === true && root.child('cuentasAutorizadas').child(auth.uid).child('validoHasta').val() > now) && ((auth.uid === $uid && root.child('cuentasAutorizadas').child(auth.uid).child('rol').val() === 'chofer' && root.child('cuentasAutorizadas').child(auth.uid).child('aprobado').val() === true) || (auth.token.rol === 'admin' && root.child('cuentasAutorizadas').child(auth.uid).child('rol').val() === 'admin') || ((root.child('cuentasAutorizadas').child($uid).child('activo').val() === true && root.child('cuentasAutorizadas').child($uid).child('validoHasta').val() > now) && root.child('cuentasAutorizadas').child($uid).child('aprobado').val() === true && data.child('pacienteAutorizado').val() === auth.uid && data.child('autorizacionValidaHasta').val() > now))",
         "lat": {
-          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer'",
+          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer' && (root.child('cuentasAutorizadas').child(auth.uid).child('activo').val() === true && root.child('cuentasAutorizadas').child(auth.uid).child('validoHasta').val() > now) && root.child('cuentasAutorizadas').child(auth.uid).child('rol').val() === 'chofer' && root.child('cuentasAutorizadas').child(auth.uid).child('aprobado').val() === true",
           ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
         },
         "lng": {
-          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer'",
+          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer' && (root.child('cuentasAutorizadas').child(auth.uid).child('activo').val() === true && root.child('cuentasAutorizadas').child(auth.uid).child('validoHasta').val() > now) && root.child('cuentasAutorizadas').child(auth.uid).child('rol').val() === 'chofer' && root.child('cuentasAutorizadas').child(auth.uid).child('aprobado').val() === true",
           ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
         },
         "timestamp": {
-          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer'",
+          ".write": "auth != null && auth.uid === $uid && auth.token.rol === 'chofer' && (root.child('cuentasAutorizadas').child(auth.uid).child('activo').val() === true && root.child('cuentasAutorizadas').child(auth.uid).child('validoHasta').val() > now) && root.child('cuentasAutorizadas').child(auth.uid).child('rol').val() === 'chofer' && root.child('cuentasAutorizadas').child(auth.uid).child('aprobado').val() === true",
           ".validate": "newData.isNumber()"
         },
         "pacienteAutorizado": {
@@ -23,8 +23,18 @@
         },
         "autorizacionVersion": {
           ".write": false
+        },
+        "reconciliacionGeneracion": {
+          ".write": false
+        },
+        "autorizacionValidaHasta": {
+          ".write": false
         }
       }
+    },
+    "cuentasAutorizadas": {
+      ".read": false,
+      ".write": false
     }
   }
 }

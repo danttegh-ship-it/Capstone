@@ -88,6 +88,7 @@ function init(db, obtenerRtdb) {
           return undefined; // llego tarde: ya hay una reconciliacion mas nueva
         }
         nodo.autorizacionVersion = version;
+        nodo.autorizacionValidaHasta = Date.now() + 300000;
         if (elegido) {
           nodo.pacienteAutorizado = elegido.pacienteId;
           nodo.viajeAutorizado = elegido.viajeId;
@@ -98,11 +99,26 @@ function init(db, obtenerRtdb) {
         return nodo;
       });
 
+    const confirmado=resultado.snapshot.val()||{};
     return {
       aplicado: Boolean(resultado && resultado.committed),
-      pacienteAutorizado: elegido ? elegido.pacienteId : null,
-      viajeAutorizado: elegido ? elegido.viajeId : null,
+      pacienteAutorizado: confirmado.pacienteAutorizado || null,
+      viajeAutorizado: confirmado.viajeAutorizado || null,
     };
+  }
+
+  async function sincronizarCuenta(uid) {
+    const ref=obtenerRtdb().ref(`cuentasAutorizadas/${uid}`);
+    const reserva=await ref.transaction(actual=>({...actual,generacion:(Number.isSafeInteger(actual?.generacion)?actual.generacion:0)+1}));
+    if(!reserva.committed) throw new Error("No se pudo reservar espejo de cuenta.");
+    const generacion=reserva.snapshot.val().generacion;
+    const snap=await db.collection("usuarios").doc(uid).get();
+    const datos=snap.exists?snap.data():{};
+    const activo=datos.activo===true && !datos.operacionCuenta && !datos.bajaEnCurso;
+    await ref.transaction(actual=>{
+      if(actual?.generacion!==generacion) return undefined;
+      return {generacion,activo,rol:datos.rol||null,aprobado:datos.aprobado===true,validoHasta:Date.now()+300000};
+    });
   }
 
   /**
@@ -116,7 +132,7 @@ function init(db, obtenerRtdb) {
     let todoBien = true;
     for (const uid of unicos) {
       try {
-        await reconciliar(uid);
+        if (!(await reconciliar(uid)).aplicado) todoBien = false;
       } catch (error) {
         todoBien = false;
         console.error(`No se pudo reconciliar la autorizacion de ubicacion de ${uid}:`, error);
@@ -125,7 +141,7 @@ function init(db, obtenerRtdb) {
     return todoBien;
   }
 
-  return { reconciliar, reconciliarSeguro };
+  return { reconciliar, reconciliarSeguro, sincronizarCuenta };
 }
 
 module.exports = { init, elegirAutorizado, ESTADOS_AUTORIZAN };

@@ -1,160 +1,51 @@
 rules_version = '2';
-
-// Reglas de Firestore de dializa-app -- version completa, puerto de
-// daily-app/firebase/firestore.rules adaptado a las colecciones de
-// dializa-app (usuarios, choferes_privado, viajes, solicitudes,
-// respuestas_paciente, rateLimits, auditoria).
-//
-// Principio general (igual que en daily-app): el cliente Flutter NUNCA
-// escribe directo las colecciones que definen permisos o estado de
-// negocio sensible (usuarios, choferes_privado, solicitudes). Esas
-// escrituras pasan por Cloud Functions, que usan el Admin SDK y por lo
-// tanto se SALTAN estas reglas -- las reglas de abajo son lo que ve
-// cualquier cliente (app Flutter, consola, etc.).
-//
-// Fase 1: `viajes/{pacienteId}` DEJA de ser escribible por el cliente. El
-// admin asigna ahora con la Cloud Function `asignarViaje`, que archiva el
-// viaje anterior en `historial_viajes` antes de reemplazarlo (un `.set()`
-// directo lo habria perdido). Unica excepcion que se mantiene:
-// `respuestas_paciente/{uid}` sigue siendo escribible directo por su dueno
-// (como ya era en dializa-app).
-//
-// Las funciones auxiliares van DENTRO de `match /databases/{database}/...`
-// porque usan $(database); declaradas fuera del bloque `service` el archivo
-// no compila al desplegar.
-
 service cloud.firestore {
-  match /databases/{database}/documents {
-
-    function autenticado() {
-      return request.auth != null;
-    }
-
-    function rolDe(uid) {
-      return get(/databases/$(database)/documents/usuarios/$(uid)).data.rol;
-    }
-
-    function esAdmin() {
-      return autenticado() &&
-        exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
-        rolDe(request.auth.uid) == 'admin';
-    }
-
-    function esPaciente() {
-      return autenticado() &&
-        exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
-        rolDe(request.auth.uid) == 'paciente';
-    }
-
-    function esConductor() {
-      return autenticado() &&
-        exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
-        rolDe(request.auth.uid) == 'chofer';
-    }
-
-    // "Regla por dueno del documento" (punto 11.4 del requerimiento): compara
-    // el uid autenticado contra el id del propio documento. Sirve para que
-    // alguien solo pueda leer/escribir SU PROPIO registro (por ejemplo, que
-    // un paciente solo pueda ver o editar su propia respuesta de asistencia,
-    // nunca la de otro paciente). Esta definida y documentada, pero -- tal
-    // como se pidio -- no se usa para abrir NINGUN permiso nuevo mas alla de
-    // los que ya funcionaban en dializa-app (ver respuestas_paciente abajo,
-    // que ya dependia de este mismo chequeo antes de este cambio). No se
-    // aplica todavia a ninguna coleccion nueva hasta que se confirme.
-    function esDueno(uid) {
-      return autenticado() && request.auth.uid == uid;
-    }
-
-    // usuarios/{uid}: perfil + rol de cada persona. Lectura abierta a
-    // cualquier autenticado (se usa para resolver el rol tras el login y
-    // listar pacientes/choferes en los paneles). Escritura SOLO via
-    // Cloud Functions (Admin SDK): crearCuentaAdministrador,
-    // solicitarRegistroConductor, aprobarConductor,
-    // activarDesactivarCuenta, eliminarCuenta, agregarPaciente,
-    // modificarPaciente, eliminarPaciente (punto 10.6).
-    match /usuarios/{uid} {
-      allow read: if autenticado();
-      allow write: if false;
-    }
-
-    // choferes_privado/{uid}: patente, licencia, disponibilidad. Datos
-    // sensibles del conductor (punto 10.2) -- solo el propio chofer o un
-    // admin pueden leerlos; la escritura es siempre via Cloud Functions
-    // (solicitarRegistroConductor, aprobarConductor,
-    // actualizarDisponibilidad).
-    match /choferes_privado/{uid} {
-      allow read: if esDueno(uid) || esAdmin();
-      allow write: if false;
-    }
-
-    // viajes/{pacienteId}: asignacion VIGENTE de chofer+hora del paciente.
-    // Lectura abierta a cualquier autenticado (el chofer necesita ver los
-    // suyos, el paciente el propio). La escritura es SIEMPRE via Cloud
-    // Functions: asignarViaje (admin; archiva el anterior),
-    // actualizarEstadoViaje y cancelarAsignacionConductor (chofer).
-    match /viajes/{pacienteId} {
-      allow read: if autenticado();
-      allow write: if false;
-    }
-
-    // solicitudes/{id}: viaje bajo demanda que pide el paciente (punto
-    // 13.1). Se crea, acepta, rechaza y avanza SIEMPRE via Cloud
-    // Functions (crearSolicitudViaje, aceptarSolicitud, rechazarSolicitud,
-    // actualizarEstadoViaje, cancelarAsignacionConductor), nunca directo
-    // desde el cliente -- igual que `solicitudes` en daily-app.
-    match /solicitudes/{id} {
-      allow read: if autenticado();
-      allow write: if false;
-    }
-
-    // respuestas_paciente/{uid}: respuesta de asistencia del paciente
-    // (sin cambios respecto a como ya funcionaba en dializa-app: solo el
-    // propio paciente o un admin pueden escribirla).
-    match /respuestas_paciente/{uid} {
-      allow read: if autenticado();
-      allow write: if esDueno(uid) || esAdmin();
-    }
-
-    // rateLimits/{doc}: contadores internos de rate limiting. Nunca se
-    // leen ni escriben desde el cliente.
-    match /rateLimits/{doc} {
-      allow read, write: if false;
-    }
-
-    // auditoria/{doc}: registro de acciones administrativas (punto
-    // 10.7). Solo lectura para administradores; la escritura es siempre
-    // via Cloud Functions.
-    match /auditoria/{doc} {
-      allow read: if esAdmin();
-      allow write: if false;
-    }
-
-    // historial_viajes/{viajeId}: copia inmutable de cada viaje cerrado
-    // (finalizado, cancelado, reasignado o de cuenta eliminada). Solo la
-    // lee un admin; NADIE la escribe desde el cliente (solo Admin SDK
-    // dentro de las transacciones de viajes.js / cuentas.js). Consultas
-    // por paciente o chofer: ver indices en firestore.indexes.json.
-    match /historial_viajes/{viajeId} {
-      allow read: if esAdmin();
-      allow write: if false;
-    }
-
-    // gps_viajes/{viajeId} y sus subcolecciones (muestras GPS observadas y
-    // rutas derivadas). Solo lectura para admin; escritura unicamente via
-    // la Cloud Function registrarMuestrasGps (valida chofer, estado,
-    // volumen y ventana de tiempo).
-    match /gps_viajes/{viajeId} {
-      allow read: if esAdmin();
-      allow write: if false;
-    }
-    match /gps_viajes/{viajeId}/{resto=**} {
-      allow read: if esAdmin();
-      allow write: if false;
-    }
-
-    // Cualquier otra coleccion no contemplada: denegada por defecto.
-    match /{document=**} {
-      allow read, write: if false;
-    }
+ match /databases/{database}/documents {
+  function autenticado() { return request.auth != null; }
+  function perfil() { return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data; }
+  function activo() {
+   return autenticado() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
+    perfil().get('activo', false) == true && perfil().get('operacionCuenta', null) == null && perfil().get('bajaEnCurso', false) == false;
   }
+  function esAdmin() { return activo() && perfil().rol == 'admin'; }
+  function esConductor() { return activo() && perfil().rol == 'chofer' && perfil().get('aprobado', false) == true; }
+  function esDueno(uid) { return activo() && request.auth.uid == uid; }
+  function conductorDelPaciente(uid) {
+   return esConductor() && exists(/databases/$(database)/documents/viajes/$(uid)) &&
+    get(/databases/$(database)/documents/viajes/$(uid)).data.choferId == request.auth.uid &&
+    get(/databases/$(database)/documents/viajes/$(uid)).data.get('estado', 'asignado') in ['asignado','conductor_en_camino','conductor_llego','en_viaje'];
+  }
+  match /usuarios/{uid} {
+   // El propio perfil permite detectar desactivacion. No contiene tokens;
+   // ejecutar migrar-privacidad antes del despliegue (ver docs).
+   allow get: if (autenticado() && request.auth.uid == uid) || esAdmin() || conductorDelPaciente(uid);
+   allow list: if esAdmin();
+   allow write: if false;
+  }
+  match /usuarios_privado/{uid} { allow read, write: if false; }
+  match /fcmTokens/{id} { allow read, write: if false; }
+  match /fcmSesiones/{id} { allow read, write: if false; }
+  match /choferes_privado/{uid} {
+   allow read: if esDueno(uid) || esAdmin();
+   allow write: if false;
+  }
+  match /viajes/{pacienteId} {
+   allow read: if esAdmin() || esDueno(pacienteId) || (esConductor() && resource.data.choferId == request.auth.uid);
+   allow write: if false;
+  }
+  match /solicitudes/{id} {
+   allow read: if esAdmin() || (activo() && resource.data.pacienteId == request.auth.uid) ||
+     (esConductor() && (resource.data.conductorId == request.auth.uid || resource.data.estado == 'solicitado'));
+   allow write: if false;
+  }
+  match /respuestas_paciente/{uid} {
+   allow read: if esAdmin() || esDueno(uid) || conductorDelPaciente(uid);
+   allow write: if esAdmin() || (esDueno(uid) && perfil().rol == 'paciente');
+  }
+  match /historial_viajes/{id} { allow read: if esAdmin(); allow write: if false; }
+  match /gps_viajes/{id} { allow read: if esAdmin(); allow write: if false; }
+  match /gps_viajes/{id}/{resto=**} { allow read: if esAdmin(); allow write: if false; }
+  match /auditoria/{id} { allow read: if esAdmin(); allow write: if false; }
+  match /{document=**} { allow read, write: if false; }
+ }
 }

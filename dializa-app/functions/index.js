@@ -98,3 +98,15 @@ function repararUbicacion(campo) {
 }
 exports.reconciliarUbicacionViaje = onDocumentWritten({ document: "viajes/{id}", retry: true }, repararUbicacion("choferId"));
 exports.reconciliarUbicacionSolicitud = onDocumentWritten({ document: "solicitudes/{id}", retry: true }, repararUbicacion("conductorId"));
+
+exports.sincronizarAccesoCuenta = onDocumentWritten({document:"usuarios/{uid}",retry:true}, event => autorizacion.sincronizarCuenta(event.params.uid));
+// TTL de cinco minutos: si los eventos/RTDB fallan, los permisos no quedan
+// vigentes indefinidamente. Renovacion periodica solo desde servidor.
+const {onSchedule}=require("firebase-functions/v2/scheduler");
+exports.renovarAccesosUbicacion = onSchedule("every 2 minutes", async ()=>{
+ const perfiles=await db.collection("usuarios").where("activo","==",true).get();
+ for(const doc of perfiles.docs) {
+  await autorizacion.sincronizarCuenta(doc.id);
+  if(doc.data().rol==="chofer" && doc.data().aprobado===true) await autorizacion.reconciliar(doc.id);
+ }
+});
