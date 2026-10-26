@@ -83,7 +83,10 @@ function init(db, cuentas, { autorizacion }) {
     await exigirLimiteTasa(db, uid, "crearSolicitudViaje", 5000, 1);
 
     const ref = db.collection("solicitudes").doc();
-    await ref.set({
+    await db.runTransaction(async tx=>{
+      const paciente=await tx.get(db.collection("usuarios").doc(uid));
+      if(!paciente.exists || !require("./operacionesCuenta").perfilOperativo(paciente.data())) throw new HttpsError("permission-denied","Paciente inactivo.");
+      tx.set(ref,{
       pacienteId: uid,
       conductorId: null,
       estado: "solicitado",
@@ -97,6 +100,7 @@ function init(db, cuentas, { autorizacion }) {
       creadoEn: new Date().toISOString(),
     });
 
+    });
     return { id: ref.id };
   });
 
@@ -123,6 +127,11 @@ function init(db, cuentas, { autorizacion }) {
         throw new HttpsError("failed-precondition", "La solicitud ya no esta disponible.");
       }
 
+      const [paciente,chofer]=await Promise.all([
+        tx.get(db.collection("usuarios").doc(solicitudDoc.data().pacienteId)),
+        tx.get(db.collection("usuarios").doc(uid)),
+      ]);
+      if(!paciente.exists || !chofer.exists || !require("./operacionesCuenta").perfilOperativo(paciente.data()) || !require("./operacionesCuenta").perfilOperativo(chofer.data())) throw new HttpsError("failed-precondition","Participante inactivo.");
       tx.update(solicitudRef, {
         conductorId: uid,
         estado: "asignado",
@@ -204,6 +213,9 @@ function init(db, cuentas, { autorizacion }) {
         throw new HttpsError("failed-precondition", `No se puede pasar de '${estadoActual}' a '${nuevoEstado}'.`);
       }
 
+      const pacienteId=coleccion==="viajes"?id:datos.pacienteId;
+      const [paciente,chofer]=await Promise.all([tx.get(db.collection("usuarios").doc(pacienteId)),tx.get(db.collection("usuarios").doc(uid))]);
+      if(!paciente.exists || !chofer.exists || !require("./operacionesCuenta").perfilOperativo(paciente.data()) || !require("./operacionesCuenta").perfilOperativo(chofer.data())) throw new HttpsError("failed-precondition","Participante inactivo.");
       const cierra = ESTADOS_FINALES.includes(nuevoEstado);
       // Todas las lecturas ANTES de escribir (regla de las transacciones).
       const ctx = cierra ? await leerContextoArchivo(tx, db, coleccion, id, datos) : null;
@@ -282,13 +294,13 @@ function init(db, cuentas, { autorizacion }) {
         tx.get(db.collection("usuarios").doc(choferId)),
       ]);
 
-      if (!pacienteSnap.exists || pacienteSnap.data().rol !== "paciente" || pacienteSnap.data().activo === false) {
+      if (!pacienteSnap.exists || pacienteSnap.data().rol !== "paciente" || !require("./operacionesCuenta").perfilOperativo(pacienteSnap.data())) {
         throw new HttpsError("failed-precondition", "El paciente no existe o esta desactivado.");
       }
       if (
         !choferSnap.exists ||
         choferSnap.data().rol !== "chofer" ||
-        choferSnap.data().activo === false ||
+        !require("./operacionesCuenta").perfilOperativo(choferSnap.data()) ||
         choferSnap.data().aprobado !== true
       ) {
         throw new HttpsError("failed-precondition", "El chofer no existe, no esta aprobado o esta desactivado.");

@@ -57,10 +57,17 @@ class FakeFirestore {
     for (let intento = 0; intento < maxIntentos; intento++) {
       const lecturas = new Map();
       const escrituras = [];
+      const consultas = [];
       const tx = {
         async get(ref) {
           if (escrituras.length > 0) throw new Error("Firestore: las lecturas deben ir antes de las escrituras en una transaccion.");
           await cede();
+          if (ref instanceof FakeCollection) {
+            const snap = await ref.get();
+            consultas.push({ ref, ids: snap.docs.map(d => d.id).sort().join("|") });
+            for (const doc of snap.docs) lecturas.set(doc.ref.path, ref.db._v(doc.ref.path));
+            return snap;
+          }
           lecturas.set(ref.path, ref.db._v(ref.path));
           return ref._snap();
         },
@@ -70,7 +77,8 @@ class FakeFirestore {
       };
       const resultado = await fn(tx);
       await cede();
-      const conflicto = [...lecturas].some(([ruta, v]) => this._v(ruta) !== v);
+      const cambiosConsulta = await Promise.all(consultas.map(async ({ref, ids}) => (await ref.get()).docs.map(d=>d.id).sort().join("|") !== ids));
+      const conflicto = cambiosConsulta.some(Boolean) || [...lecturas].some(([ruta, v]) => this._v(ruta) !== v);
       if (conflicto) continue;
       // Validacion previa (update sobre inexistente) y aplicacion atomica.
       for (const e of escrituras) {
@@ -207,6 +215,7 @@ class FakeAuth {
   }
   _noExiste() { const e = new Error("There is no user record."); e.code = "auth/user-not-found"; return e; }
   agregar({ uid, email, disabled = false, claims = {} }) { this.usuarios.set(uid, { uid, email, disabled, claims, tokensRevocados: 0 }); return this.usuarios.get(uid); }
+  async getUser(uid) { const u=this.usuarios.get(uid); if(!u) throw this._noExiste(); return {...u}; }
   async getUserByEmail(email) {
     const u = [...this.usuarios.values()].find((x) => x.email === String(email).toLowerCase());
     if (!u) throw this._noExiste();

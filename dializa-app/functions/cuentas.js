@@ -26,6 +26,7 @@ const { ESTADOS_FINALES, leerContextoArchivo, escribirArchivo, agregarHistorial 
  */
 function init(db, { autorizacion }, authInyectado = null) {
   const auth = authInyectado || getAuth();
+  const operaciones = require("./operacionesCuenta").init(db, auth);
 
   /**
    * Fija el custom claim `rol` de un usuario en Firebase Auth. Se llama
@@ -70,7 +71,7 @@ function init(db, { autorizacion }, authInyectado = null) {
       rol = datos.rol;
     }
 
-    if (datos.activo === false) {
+    if (datos.activo !== true || datos.operacionCuenta || datos.bajaEnCurso) {
       throw new HttpsError("permission-denied", "Tu cuenta esta desactivada.");
     }
 
@@ -155,31 +156,18 @@ function init(db, { autorizacion }, authInyectado = null) {
     const vehiculoAdaptado = Boolean(request.data && request.data.vehiculoAdaptado);
     const telefono = validarTelefono(request.data && request.data.telefono);
 
-    const usuarioDoc = await db.collection("usuarios").doc(uid).get();
-    if (usuarioDoc.exists && usuarioDoc.data().rol && usuarioDoc.data().rol !== "chofer") {
-      throw new HttpsError("failed-precondition", "Esta cuenta ya tiene otro rol asignado.");
-    }
-    if (usuarioDoc.exists && usuarioDoc.data().aprobado === true) {
-      throw new HttpsError("already-exists", "Ya tienes un registro de chofer aprobado.");
-    }
-
-    const batch = db.batch();
-    batch.set(
-      db.collection("usuarios").doc(uid),
-      {
-        rol: "chofer",
-        activo: true,
-        aprobado: false,
-        telefono,
-      },
-      { merge: true }
-    );
-    batch.set(
-      db.collection("choferes_privado").doc(uid),
-      { patente, licencia, modeloVehiculo, vehiculoAdaptado, disponible: false },
-      { merge: true }
-    );
-    await batch.commit();
+    await db.runTransaction(async tx => {
+      const ref=db.collection("usuarios").doc(uid);
+      const usuarioDoc=await tx.get(ref);
+      if(usuarioDoc.exists) {
+        const previo=usuarioDoc.data();
+        if(previo.activo!==true || previo.operacionCuenta || previo.bajaEnCurso) throw new HttpsError("permission-denied","Tu cuenta esta desactivada o en proceso de baja.");
+        if(previo.rol && previo.rol!=="chofer") throw new HttpsError("failed-precondition","Esta cuenta ya tiene otro rol asignado.");
+        if(previo.aprobado===true) throw new HttpsError("already-exists","Ya tienes un registro de chofer aprobado.");
+      }
+      tx.set(ref,{rol:"chofer",activo:true,aprobado:false,telefono},{merge:true});
+      tx.set(db.collection("choferes_privado").doc(uid),{patente,licencia,modeloVehiculo,vehiculoAdaptado,disponible:false},{merge:true});
+    });
 
     await sincronizarClaimRol(uid, "chofer");
 
@@ -193,12 +181,15 @@ function init(db, { autorizacion }, authInyectado = null) {
     await exigirAdmin(request);
     const conductorUid = validarUid(request.data && request.data.uid);
 
-    const doc = await db.collection("usuarios").doc(conductorUid).get();
-    if (!doc.exists || doc.data().rol !== "chofer") {
-      throw new HttpsError("not-found", "No existe un registro de chofer con ese uid.");
-    }
-
-    await db.collection("usuarios").doc(conductorUid).update({ aprobado: true, activo: true });
+    const usuarioAuth=await auth.getUser(conductorUid);
+    if(usuarioAuth.disabled) throw new HttpsError("failed-precondition","Reactiva la cuenta antes de aprobarla.");
+    await db.runTransaction(async tx=>{
+      const ref=db.collection("usuarios").doc(conductorUid);
+      const doc=await tx.get(ref);
+      if(!doc.exists || doc.data().rol!=="chofer") throw new HttpsError("not-found","No existe ese chofer.");
+      if(!require("./operacionesCuenta").perfilOperativo(doc.data())) throw new HttpsError("failed-precondition","Reactiva la cuenta antes de aprobarla.");
+      tx.update(ref,{aprobado:true});
+    });
     await sincronizarClaimRol(conductorUid, "chofer");
 
     await registrarAuditoria(db, {
@@ -214,113 +205,55 @@ function init(db, { autorizacion }, authInyectado = null) {
   // activarDesactivarCuenta / eliminarCuenta: con auto-proteccion y
   // proteccion del ultimo administrador (punto 9.10).
   // ---------------------------------------------------------------------
-  const activarDesactivarCuenta = onCall(async (request) => {
-    const { uid: actorUid } = await exigirAdmin(request);
-    const objetivoUid = validarUid(request.data && request.data.uid);
-    const activo = Boolean(request.data && request.data.activo);
-
-    if (objetivoUid === actorUid && !activo) {
-      throw new HttpsError("failed-precondition", "No puedes desactivar tu propia cuenta.");
-    }
-
-    const doc = await db.collection("usuarios").doc(objetivoUid).get();
-    if (!doc.exists) throw new HttpsError("not-found", "Usuario no encontrado.");
-
-    if (!activo && doc.data().rol === "admin") {
-      const administradoresActivos = await contarAdministradoresActivos();
-      if (administradoresActivos <= 1) {
-        throw new HttpsError("failed-precondition", "No puedes desactivar al ultimo administrador activo.");
-      }
-    }
-
-    // Correccion D. Orden pensado para que un fallo a medias sea SEGURO y
-    // el reintento sea idempotente:
-    //   - desactivar: primero Firestore (las Cloud Functions ya bloquean a
-    //     la cuenta), luego Auth (disabled + revocar refresh tokens).
-    //   - activar: primero Auth (que pueda iniciar sesion), luego Firestore.
-    // Limites reales (ver docs/ARQUITECTURA.md): deshabilitar en Auth impide
-    // NUEVOS inicios de sesion y renovar el token, pero los ID tokens ya
-    // emitidos siguen siendo validos hasta ~1 h. Las Cloud Functions de esta
-    // app se bloquean al instante (exigirPerfilValido relee Firestore), pero
-    // las reglas de RTDB solo ven el token: un chofer desactivado podria
-    // seguir escribiendo SU propia ubicacion hasta que expire el token.
-    let authActualizado = true;
-    const actualizarAuth = async (accion) => {
-      try {
-        await accion();
-      } catch (error) {
-        if (error && error.code === "auth/user-not-found") {
-          authActualizado = false; // la cuenta existe solo en Firestore
-          return;
-        }
-        throw error;
-      }
-    };
-
-    if (activo) {
-      await actualizarAuth(() => auth.updateUser(objetivoUid, { disabled: false }));
-      await db.collection("usuarios").doc(objetivoUid).update({ activo: true });
-    } else {
-      await db.collection("usuarios").doc(objetivoUid).update({ activo: false });
-      await actualizarAuth(async () => {
-        await auth.updateUser(objetivoUid, { disabled: true });
-        await auth.revokeRefreshTokens(objetivoUid);
-      });
-    }
-
-    await registrarAuditoria(db, {
-      accion: activo ? "activarCuenta" : "desactivarCuenta",
-      actorUid,
-      objetivoUid,
-      detalle: { authActualizado },
-    });
-
-    return { ok: true, authActualizado };
+  const activarDesactivarCuenta = onCall(async request => {
+    const {uid:actorUid}=await exigirAdmin(request);
+    const objetivoUid=validarUid(request.data?.uid);
+    if(typeof request.data?.activo!=="boolean") throw new HttpsError("invalid-argument","activo debe ser booleano.");
+    const activo=request.data.activo;
+    const ctx=await operaciones.preparar(actorUid,objetivoUid,activo?"activar":"desactivar");
+    const authActualizado=await operaciones.aplicarAuth(objetivoUid,activo);
+    await operaciones.finalizar(ctx,activo && authActualizado);
+    await registrarAuditoria(db,{accion:activo?"activarCuenta":"desactivarCuenta",actorUid,objetivoUid,detalle:{authActualizado}});
+    return {ok:true,authActualizado};
   });
 
-  const eliminarCuenta = onCall(async (request) => {
-    const { uid: actorUid } = await exigirAdmin(request);
-    const objetivoUid = validarUid(request.data && request.data.uid);
-
-    if (objetivoUid === actorUid) {
-      throw new HttpsError("failed-precondition", "No puedes eliminar tu propia cuenta.");
-    }
-
-    const doc = await db.collection("usuarios").doc(objetivoUid).get();
-    if (!doc.exists) throw new HttpsError("not-found", "Usuario no encontrado.");
-
-    if (doc.data().rol === "admin") {
-      const administradoresActivos = await contarAdministradoresActivos();
-      if (administradoresActivos <= 1) {
-        throw new HttpsError("failed-precondition", "No puedes eliminar al ultimo administrador activo.");
+  // Una unica ruta de baja para cualquier rol. El perfil bloqueado se
+  // conserva hasta que archivado, Auth y limpieza hayan terminado.
+  async function darDeBaja(actorUid, objetivoUid) {
+    const ctx=await operaciones.preparar(actorUid,objetivoUid,"eliminar");
+    const choferes=new Set();
+    if(ctx.datos.rol==="paciente") {
+      const refs=[db.collection("viajes").doc(objetivoUid)];
+      const solicitudes=await db.collection("solicitudes").where("pacienteId","==",objetivoUid).get();
+      refs.push(...solicitudes.docs.map(d=>d.ref));
+      for(const ref of refs) {
+        const coleccion=ref.path.startsWith("viajes/")?"viajes":"solicitudes";
+        const conductor=await db.runTransaction(async tx=>{
+          const doc=await tx.get(ref);
+          if(!doc.exists) return null;
+          const datos=doc.data();
+          if(datos.estado==="en_viaje") throw new HttpsError("failed-precondition","No se puede borrar un viaje iniciado.");
+          const contexto=await leerContextoArchivo(tx,db,coleccion,ref.id,datos);
+          const cerrado=ESTADOS_FINALES.includes(datos.estado);
+          const finales=cerrado?datos:{...datos,estado:"cancelado",historial:agregarHistorial(datos.historial,"cancelado",actorUid)};
+          escribirArchivo(tx,contexto,{coleccion,id:ref.id,datosFinales:finales,cierre:"cuenta_eliminada"});
+          if(coleccion==="viajes") tx.delete(ref);
+          else if(!cerrado) tx.update(ref,{estado:"cancelado",historial:finales.historial});
+          return datos[coleccion==="viajes"?"choferId":"conductorId"]||null;
+        });
+        if(conductor) choferes.add(conductor);
       }
     }
-
-    if (doc.data().rol === "chofer") {
-      // No se borra a un chofer con viajes sin cerrar: quedarian huerfanos
-      // y el paciente seguiria autorizado a una ubicacion que nadie emite.
-      const [viajesChofer, solicitudesChofer] = await Promise.all([
-        db.collection("viajes").where("choferId", "==", objetivoUid).get(),
-        db.collection("solicitudes").where("conductorId", "==", objetivoUid).get(),
-      ]);
-      const abiertos = [...viajesChofer.docs, ...solicitudesChofer.docs].filter(
-        (d) => !ESTADOS_FINALES.includes(d.data().estado || "asignado")
-      );
-      if (abiertos.length > 0) {
-        throw new HttpsError(
-          "failed-precondition",
-          "El chofer tiene viajes sin cerrar. Reasignalos o cancelalos antes de eliminarlo."
-        );
-      }
-    }
-
-    await db.collection("usuarios").doc(objetivoUid).delete();
-    await db.collection("choferes_privado").doc(objetivoUid).delete().catch(() => {});
-    await auth.deleteUser(objetivoUid).catch(() => {});
-
-    await registrarAuditoria(db, { accion: "eliminarCuenta", actorUid, objetivoUid });
-
-    return { ok: true };
+    const authActualizado=await operaciones.aplicarAuth(objetivoUid,false,true);
+    await db.collection("choferes_privado").doc(objetivoUid).delete();
+    await operaciones.finalizar(ctx,false,true);
+    await registrarAuditoria(db,{accion:"eliminarCuenta",actorUid,objetivoUid,detalle:{authActualizado}});
+    const autorizacionSincronizada=await autorizacion.reconciliarSeguro([...choferes]);
+    return {ok:true,authActualizado,autorizacionSincronizada};
+  }
+  const eliminarCuenta=onCall(async request=>{
+    const {uid:actorUid}=await exigirAdmin(request);
+    return darDeBaja(actorUid,validarUid(request.data?.uid));
   });
 
   // ---------------------------------------------------------------------
@@ -426,59 +359,12 @@ function init(db, { autorizacion }, authInyectado = null) {
     return { ok: true };
   });
 
-  const eliminarPaciente = onCall(async (request) => {
-    const { uid: actorUid } = await exigirAdmin(request);
-    const uidPaciente = validarUid(request.data && request.data.uid);
-
-    const doc = await db.collection("usuarios").doc(uidPaciente).get();
-    if (!doc.exists || doc.data().rol !== "paciente") {
-      throw new HttpsError("not-found", "No existe ese paciente.");
-    }
-
-    // Antes de borrar la cuenta se archiva todo viaje sin cerrar (cierre
-    // 'cuenta_eliminada') para no perder evidencia, y se reconcilia la
-    // autorizacion de ubicacion de los choferes implicados.
-    const choferesAfectados = new Set();
-
-    const viajeRef = db.collection("viajes").doc(uidPaciente);
-    await db.runTransaction(async (tx) => {
-      const viajeSnap = await tx.get(viajeRef);
-      if (!viajeSnap.exists) return;
-      const datos = viajeSnap.data();
-      const ctx = await leerContextoArchivo(tx, db, "viajes", uidPaciente, datos);
-      escribirArchivo(tx, ctx, { coleccion: "viajes", id: uidPaciente, datosFinales: datos, cierre: "cuenta_eliminada" });
-      tx.delete(viajeRef);
-      if (datos.choferId) choferesAfectados.add(datos.choferId);
-    });
-
-    const solicitudesPaciente = await db.collection("solicitudes").where("pacienteId", "==", uidPaciente).get();
-    for (const sol of solicitudesPaciente.docs) {
-      await db.runTransaction(async (tx) => {
-        const snap = await tx.get(sol.ref);
-        if (!snap.exists) return;
-        const datos = snap.data();
-        if (ESTADOS_FINALES.includes(datos.estado)) return; // ya archivada al cerrarse
-        const ctx = await leerContextoArchivo(tx, db, "solicitudes", sol.id, datos);
-        const datosFinales = {
-          ...datos,
-          estado: "cancelado",
-          historial: agregarHistorial(datos.historial, "cancelado", actorUid),
-        };
-        tx.update(sol.ref, { estado: datosFinales.estado, historial: datosFinales.historial });
-        escribirArchivo(tx, ctx, { coleccion: "solicitudes", id: sol.id, datosFinales, cierre: "cuenta_eliminada" });
-        if (datos.conductorId) {
-          tx.set(db.collection("choferes_privado").doc(datos.conductorId), { disponible: false }, { merge: true });
-          choferesAfectados.add(datos.conductorId);
-        }
-      });
-    }
-
-    await db.collection("usuarios").doc(uidPaciente).delete();
-
-    await registrarAuditoria(db, { accion: "eliminarPaciente", actorUid, objetivoUid: uidPaciente });
-
-    const autorizacionSincronizada = await autorizacion.reconciliarSeguro([...choferesAfectados]);
-    return { ok: true, autorizacionSincronizada };
+  const eliminarPaciente = onCall(async request => {
+    const {uid:actorUid}=await exigirAdmin(request);
+    const objetivoUid=validarUid(request.data?.uid);
+    const doc=await db.collection("usuarios").doc(objetivoUid).get();
+    if(!doc.exists || doc.data().rol!=="paciente") throw new HttpsError("not-found","No existe ese paciente.");
+    return darDeBaja(actorUid,objetivoUid);
   });
 
   return {
