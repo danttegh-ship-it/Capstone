@@ -108,34 +108,34 @@ test("A: reasignar el viaje a otro chofer revoca al chofer anterior y no concede
   assert.equal(nodo(e, UID.chofer2).pacienteAutorizado, UID.paciente);
 });
 
-test("A: un evento TARDIO (reconciliacion mas vieja) no revoca ni concede sobre una asignacion mas nueva", async () => {
-  const e = await entorno();
-  await asignar(e);
-  await estado(e, UID.chofer, "conductor_en_camino");
-  const ahora = Date.now();
-  const original = Date.now;
-  try {
-    Date.now = () => ahora - 60000; // reconciliacion que "empezo" hace un minuto
-    const tardia = await e.autorizacion.reconciliar(UID.chofer);
-    assert.equal(tardia.aplicado, false, "debe abortar: hay una version mas nueva");
-  } finally {
-    Date.now = original;
-  }
-  assert.equal(nodo(e, UID.chofer).pacienteAutorizado, UID.paciente, "el acceso vigente se conserva");
-
-  // y al reves: tras revocar, una concesion vieja no revive el acceso
-  await estado(e, UID.chofer, "cancelado");
-  assert.equal(nodo(e, UID.chofer).pacienteAutorizado, undefined);
-  const versionRevocacion = nodo(e, UID.chofer).autorizacionVersion;
-  await e.db.collection("solicitudes").doc("sol_viejo_0001").set({ pacienteId: UID.paciente2, conductorId: UID.chofer, estado: "asignado", historial: [] });
-  try {
-    Date.now = () => versionRevocacion - 5000;
-    const r = await e.autorizacion.reconciliar(UID.chofer);
-    assert.equal(r.aplicado, false);
-  } finally {
-    Date.now = original;
-  }
-  assert.equal(nodo(e, UID.chofer).pacienteAutorizado, undefined, "la lapida impide revivir el acceso");
+test("H02: con reloj empatado un escritor atrasado no revive un permiso revocado", async () => {
+ const e=await entorno();
+ await e.db.doc("solicitudes/sol_fencing_001").set({pacienteId:UID.paciente,conductorId:UID.chofer,estado:"asignado"});
+ const original=e.rtdb.ref.bind(e.rtdb);
+ let liberar, detenido;
+ const espera=new Promise(r=>liberar=r), listo=new Promise(r=>detenido=r);
+ let llamadas=0;
+ e.rtdb.ref=ruta=>{
+   const ref=original(ruta), tx=ref.transaction.bind(ref);
+   ref.transaction=async fn=>{
+     llamadas++;
+     if(llamadas===2){detenido();await espera;}
+     return tx(fn);
+   };
+   return ref;
+ };
+ const ahora=Date.now;Date.now=()=>1234;
+ try {
+   const vieja=e.autorizacion.reconciliar(UID.chofer);
+   await listo;
+   await e.db.doc("solicitudes/sol_fencing_001").update({estado:"cancelado"});
+   const nueva=await e.autorizacion.reconciliar(UID.chofer);
+   assert.equal(nueva.aplicado,true);
+   liberar();
+   assert.equal((await vieja).aplicado,false);
+   assert.equal(nodo(e,UID.chofer).pacienteAutorizado,undefined);
+   assert.equal(nodo(e,UID.chofer).reconciliacionGeneracion,2);
+ } finally {liberar();Date.now=ahora;}
 });
 
 test("A: el update() de lat/lng/timestamp del chofer NO borra pacienteAutorizado (set() si lo borraria)", async () => {

@@ -83,3 +83,18 @@ exports.ajustarRutaGps = geoapifyFunciones.ajustarRutaGps;
 // ---------------------------------------------------------------------
 exports.notificarAsignacionViaje = notificaciones.notificarAsignacionViaje;
 exports.notificarAsignacionSolicitud = notificaciones.notificarAsignacionSolicitud;
+
+// H02: retry real del proveedor ante caida temporal de RTDB. Evento viejo:
+// se recalcula el estado actual, nunca se aplica el payload antiguo.
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+function repararUbicacion(campo) {
+  return async (event) => {
+    if (!event.data) return;
+    const antes = event.data.before.exists ? event.data.before.data() : {};
+    const despues = event.data.after.exists ? event.data.after.data() : {};
+    const uids = [...new Set([antes[campo], despues[campo]].filter(Boolean))];
+    for (const uid of uids) await autorizacion.reconciliar(uid);
+  };
+}
+exports.reconciliarUbicacionViaje = onDocumentWritten({ document: "viajes/{id}", retry: true }, repararUbicacion("choferId"));
+exports.reconciliarUbicacionSolicitud = onDocumentWritten({ document: "solicitudes/{id}", retry: true }, repararUbicacion("conductorId"));
