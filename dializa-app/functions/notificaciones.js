@@ -18,19 +18,38 @@ const { getMessaging } = require("firebase-admin/messaging");
 function init(db) {
   async function enviarNotificacion(uidDestino, titulo, cuerpo, datos = {}) {
     const usuarioDoc = await db.collection("usuarios").doc(uidDestino).get();
-    if(!usuarioDoc.exists || !require("./operacionesCuenta").perfilOperativo(usuarioDoc.data())) return;
-    const privado=await db.collection("usuarios_privado").doc(uidDestino).get();
-    if(!privado.exists) return;
-    const {fcmToken:token,tokenKey,sesionId}=privado.data();
-    if(!token || !tokenKey || !sesionId) return;
-    const [propietario,sesion]=await Promise.all([db.collection("fcmTokens").doc(tokenKey).get(),db.collection("fcmSesiones").doc(sesionId).get()]);
-    if(!propietario.exists || propietario.data().uid!==uidDestino || propietario.data().sesionId!==sesionId || !sesion.exists || sesion.data().revocada) return;
+    if (
+      !usuarioDoc.exists ||
+      !require("./operacionesCuenta").perfilOperativo(usuarioDoc.data())
+    )
+      return;
+    const privado = await db
+      .collection("usuarios_privado")
+      .doc(uidDestino)
+      .get();
+    if (!privado.exists) return;
+    const { fcmToken: token, tokenKey, sesionId } = privado.data();
+    if (!token || !tokenKey || !sesionId) return;
+    const [propietario, sesion] = await Promise.all([
+      db.collection("fcmTokens").doc(tokenKey).get(),
+      db.collection("fcmSesiones").doc(sesionId).get(),
+    ]);
+    if (
+      !propietario.exists ||
+      propietario.data().uid !== uidDestino ||
+      propietario.data().sesionId !== sesionId ||
+      !sesion.exists ||
+      sesion.data().revocada
+    )
+      return;
 
     await getMessaging()
       .send({
         token,
         notification: { title: titulo, body: cuerpo },
-        data: Object.fromEntries(Object.entries(datos).map(([k, v]) => [k, String(v)])),
+        data: Object.fromEntries(
+          Object.entries(datos).map(([k, v]) => [k, String(v)]),
+        ),
       })
       .catch((error) => {
         // Un token invalido/expirado no debe tumbar la funcion que lo
@@ -40,40 +59,51 @@ function init(db) {
   }
 
   // Notifica al paciente cuando `viajes/{pacienteId}` pasa a tener chofer.
-  const notificarAsignacionViaje = onDocumentWritten("viajes/{pacienteId}", async (event) => {
-    const antes = event.data.before.exists ? event.data.before.data() : null;
-    const despues = event.data.after.exists ? event.data.after.data() : null;
-    if (!despues) return;
+  const notificarAsignacionViaje = onDocumentWritten(
+    "viajes/{pacienteId}",
+    async (event) => {
+      const antes = event.data.before.exists ? event.data.before.data() : null;
+      const despues = event.data.after.exists ? event.data.after.data() : null;
+      if (!despues) return;
 
-    const choferAsignadoAhora =
-      despues.choferId && (!antes || antes.choferId !== despues.choferId || antes.viajeId !== despues.viajeId);
-    if (!choferAsignadoAhora) return;
+      const choferAsignadoAhora =
+        despues.choferId &&
+        (!antes ||
+          antes.choferId !== despues.choferId ||
+          antes.viajeId !== despues.viajeId);
+      if (!choferAsignadoAhora) return;
 
-    const pacienteId = event.params.pacienteId;
-    await enviarNotificacion(
-      pacienteId,
-      "Chofer asignado",
-      `${despues.choferNombre || "Un chofer"} te llevara el ${despues.fecha} a las ${despues.hora}.`,
-      { tipo: "viaje", pacienteId }
-    );
-  });
+      const pacienteId = event.params.pacienteId;
+      await enviarNotificacion(
+        pacienteId,
+        "Chofer asignado",
+        `${despues.choferNombre || "Un chofer"} te llevara el ${despues.fecha} a las ${despues.hora}.`,
+        { tipo: "viaje", pacienteId },
+      );
+    },
+  );
 
   // Notifica al paciente cuando un chofer acepta su `solicitudes/{id}`.
-  const notificarAsignacionSolicitud = onDocumentWritten("solicitudes/{solicitudId}", async (event) => {
-    const antes = event.data.before.exists ? event.data.before.data() : null;
-    const despues = event.data.after.exists ? event.data.after.data() : null;
-    if (!despues) return;
+  const notificarAsignacionSolicitud = onDocumentWritten(
+    "solicitudes/{solicitudId}",
+    async (event) => {
+      const antes = event.data.before.exists ? event.data.before.data() : null;
+      const despues = event.data.after.exists ? event.data.after.data() : null;
+      if (!despues) return;
 
-    const recienAsignada = despues.estado === "asignado" && (!antes || antes.estado !== "asignado");
-    if (!recienAsignada) return;
+      const recienAsignada =
+        despues.estado === "asignado" &&
+        (!antes || antes.estado !== "asignado");
+      if (!recienAsignada) return;
 
-    await enviarNotificacion(
-      despues.pacienteId,
-      "Viaje confirmado",
-      "Un chofer aceptó tu solicitud de traslado.",
-      { tipo: "solicitud", solicitudId: event.params.solicitudId }
-    );
-  });
+      await enviarNotificacion(
+        despues.pacienteId,
+        "Viaje confirmado",
+        "Un chofer aceptó tu solicitud de traslado.",
+        { tipo: "solicitud", solicitudId: event.params.solicitudId },
+      );
+    },
+  );
 
   return { notificarAsignacionViaje, notificarAsignacionSolicitud };
 }

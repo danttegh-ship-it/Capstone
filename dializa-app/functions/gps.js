@@ -51,10 +51,17 @@ function init(db, cuentas) {
 
     const coleccion = request.data && request.data.coleccion;
     if (coleccion !== "viajes" && coleccion !== "solicitudes") {
-      throw new HttpsError("invalid-argument", "coleccion debe ser 'viajes' o 'solicitudes'.");
+      throw new HttpsError(
+        "invalid-argument",
+        "coleccion debe ser 'viajes' o 'solicitudes'.",
+      );
     }
     const id = validarUid(request.data && request.data.id);
-    const muestras = validarMuestrasGps(request.data && request.data.muestras, Date.now(), 8 * 60 * 60 * 1000);
+    const muestras = validarMuestrasGps(
+      request.data && request.data.muestras,
+      Date.now(),
+      8 * 60 * 60 * 1000,
+    );
 
     await exigirLimiteTasa(db, uid, "registrarMuestrasGps", 60000, 30);
 
@@ -62,31 +69,50 @@ function init(db, cuentas) {
 
     const resultado = await db.runTransaction(async (tx) => {
       const viajeSnap = await tx.get(viajeRef);
-      if (!viajeSnap.exists) throw new HttpsError("not-found", "Viaje no encontrado.");
+      if (!viajeSnap.exists)
+        throw new HttpsError("not-found", "Viaje no encontrado.");
       const datos = viajeSnap.data();
 
       if (datos[campoConductor(coleccion)] !== uid) {
-        throw new HttpsError("permission-denied", "Este viaje no esta asignado a ti.");
+        throw new HttpsError(
+          "permission-denied",
+          "Este viaje no esta asignado a ti.",
+        );
       }
       exigirInstancia(coleccion, id, datos, request.data.viajeId);
       const estado = datos.estado || "asignado";
       if (!ESTADOS_CON_GPS.includes(estado)) {
-        throw new HttpsError("failed-precondition", `No se registra GPS en estado '${estado}'.`);
+        throw new HttpsError(
+          "failed-precondition",
+          `No se registra GPS en estado '${estado}'.`,
+        );
       }
 
-      const inicio=Date.parse(datos.gpsIniciadoEn || "");
-      if(Number.isFinite(inicio) && muestras.some(m=>m.t<inicio-60000)) throw new HttpsError("invalid-argument","La muestra es anterior al inicio del recorrido.");
+      const inicio = Date.parse(datos.gpsIniciadoEn || "");
+      if (Number.isFinite(inicio) && muestras.some((m) => m.t < inicio - 60000))
+        throw new HttpsError(
+          "invalid-argument",
+          "La muestra es anterior al inicio del recorrido.",
+        );
       const { viajeId } = viajeIdDe(coleccion, id, datos);
       const resumenRef = db.collection("gps_viajes").doc(viajeId);
-      const refsMuestras = muestras.map((m) => resumenRef.collection("muestras").doc(String(m.t)));
+      const refsMuestras = muestras.map((m) =>
+        resumenRef.collection("muestras").doc(String(m.t)),
+      );
 
-      const [resumenSnap, ...existentes] = await Promise.all([tx.get(resumenRef), ...refsMuestras.map((r) => tx.get(r))]);
+      const [resumenSnap, ...existentes] = await Promise.all([
+        tx.get(resumenRef),
+        ...refsMuestras.map((r) => tx.get(r)),
+      ]);
       const resumen = resumenSnap.exists ? resumenSnap.data() : null;
       const conteoActual = resumen ? resumen.conteo || 0 : 0;
 
       const nuevas = muestras.filter((_, i) => !existentes[i].exists);
       if (conteoActual + nuevas.length > GPS_MAX_MUESTRAS_POR_VIAJE) {
-        throw new HttpsError("resource-exhausted", "Se alcanzo el maximo de muestras GPS para este viaje.");
+        throw new HttpsError(
+          "resource-exhausted",
+          "Se alcanzo el maximo de muestras GPS para este viaje.",
+        );
       }
 
       nuevas.forEach((m) => {
@@ -112,14 +138,24 @@ function init(db, cuentas) {
             pacienteId,
             conductorId: uid,
             conteo: conteoActual + nuevas.length,
-            primerTs: resumen && resumen.primerTs ? Math.min(resumen.primerTs, primerLote) : primerLote,
-            ultimoTs: resumen && resumen.ultimoTs ? Math.max(resumen.ultimoTs, ultimoLote) : ultimoLote,
+            primerTs:
+              resumen && resumen.primerTs
+                ? Math.min(resumen.primerTs, primerLote)
+                : primerLote,
+            ultimoTs:
+              resumen && resumen.ultimoTs
+                ? Math.max(resumen.ultimoTs, ultimoLote)
+                : ultimoLote,
           },
-          { merge: true }
+          { merge: true },
         );
       }
 
-      return { guardadas: nuevas.length, duplicadas: muestras.length - nuevas.length, viajeId };
+      return {
+        guardadas: nuevas.length,
+        duplicadas: muestras.length - nuevas.length,
+        viajeId,
+      };
     });
 
     return { ok: true, ...resultado };

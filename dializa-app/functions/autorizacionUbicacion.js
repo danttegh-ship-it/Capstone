@@ -9,11 +9,21 @@
 const { campoConductor, viajeIdDe } = require("./historial");
 
 const ESTADOS_AUTORIZAN = {
-  solicitudes: ["asignado", "conductor_en_camino", "conductor_llego", "en_viaje"],
+  solicitudes: [
+    "asignado",
+    "conductor_en_camino",
+    "conductor_llego",
+    "en_viaje",
+  ],
   viajes: ["conductor_en_camino", "conductor_llego", "en_viaje"],
 };
 
-const PRIORIDAD_ESTADO = { en_viaje: 4, conductor_llego: 3, conductor_en_camino: 2, asignado: 1 };
+const PRIORIDAD_ESTADO = {
+  en_viaje: 4,
+  conductor_llego: 3,
+  conductor_en_camino: 2,
+  asignado: 1,
+};
 
 function ultimoCambio(datos) {
   const h = Array.isArray(datos.historial) ? datos.historial : [];
@@ -33,12 +43,27 @@ function elegirAutorizado(viajes, solicitudes) {
   for (const v of viajes) {
     const estado = v.datos.estado || "asignado";
     if (ESTADOS_AUTORIZAN.viajes.includes(estado)) {
-      candidatos.push({ coleccion: "viajes", id: v.id, pacienteId: v.id, estado, datos: v.datos });
+      candidatos.push({
+        coleccion: "viajes",
+        id: v.id,
+        pacienteId: v.id,
+        estado,
+        datos: v.datos,
+      });
     }
   }
   for (const s of solicitudes) {
-    if (ESTADOS_AUTORIZAN.solicitudes.includes(s.datos.estado) && s.datos.pacienteId) {
-      candidatos.push({ coleccion: "solicitudes", id: s.id, pacienteId: s.datos.pacienteId, estado: s.datos.estado, datos: s.datos });
+    if (
+      ESTADOS_AUTORIZAN.solicitudes.includes(s.datos.estado) &&
+      s.datos.pacienteId
+    ) {
+      candidatos.push({
+        coleccion: "solicitudes",
+        id: s.id,
+        pacienteId: s.datos.pacienteId,
+        estado: s.datos.estado,
+        datos: s.datos,
+      });
     }
   }
   if (candidatos.length === 0) return null;
@@ -62,27 +87,58 @@ function elegirAutorizado(viajes, solicitudes) {
  * @param {() => import('firebase-admin/database').Database} obtenerRtdb
  *        funcion (no valor) para no exigir RTDB al cargar el modulo.
  */
+// Una transaccion RTDB puede recibir null de la cache local y abortar sin
+// leer del servidor. Mantener una vista viva evita confundir cache vacia con
+// una generacion inexistente. Cada invocacion retira solo su propio listener.
+async function conVistaViva(ref, accion) {
+  const listener = () => {};
+  ref.on("value", listener);
+  try {
+    await ref.once("value");
+    return await accion();
+  } finally {
+    ref.off("value", listener);
+  }
+}
+
 function init(db, obtenerRtdb) {
   /** Recalcula y persiste la autorizacion de UN chofer. */
   async function reconciliar(choferUid) {
     const ref = obtenerRtdb().ref(`ubicaciones/${choferUid}`);
-    const reserva = await ref.transaction((actual) => {
-      const nodo = actual && typeof actual === "object" ? { ...actual } : {};
-      nodo.reconciliacionGeneracion = (Number.isSafeInteger(nodo.reconciliacionGeneracion) ? nodo.reconciliacionGeneracion : 0) + 1;
-      return nodo;
-    });
-    if (!reserva.committed) throw new Error("No se pudo reservar una generacion RTDB.");
-    const version = reserva.snapshot.val().reconciliacionGeneracion;
+    return conVistaViva(ref, async () => {
+      const reserva = await ref.transaction((actual) => {
+        const nodo = actual && typeof actual === "object" ? { ...actual } : {};
+        nodo.reconciliacionGeneracion =
+          (Number.isSafeInteger(nodo.reconciliacionGeneracion)
+            ? nodo.reconciliacionGeneracion
+            : 0) + 1;
+        return nodo;
+      });
+      if (!reserva.committed)
+        throw new Error("No se pudo reservar una generacion RTDB.");
+      const version = reserva.snapshot.val().reconciliacionGeneracion;
 
-    const [viajesSnap, solicitudesSnap] = await Promise.all([
-      db.collection("viajes").where(campoConductor("viajes"), "==", choferUid).get(),
-      db.collection("solicitudes").where(campoConductor("solicitudes"), "==", choferUid).get(),
-    ]);
-    const viajes = viajesSnap.docs.map((d) => ({ id: d.id, datos: d.data() }));
-    const solicitudes = solicitudesSnap.docs.map((d) => ({ id: d.id, datos: d.data() }));
-    const elegido = elegirAutorizado(viajes, solicitudes);
+      const [viajesSnap, solicitudesSnap] = await Promise.all([
+        db
+          .collection("viajes")
+          .where(campoConductor("viajes"), "==", choferUid)
+          .get(),
+        db
+          .collection("solicitudes")
+          .where(campoConductor("solicitudes"), "==", choferUid)
+          .get(),
+      ]);
+      const viajes = viajesSnap.docs.map((d) => ({
+        id: d.id,
+        datos: d.data(),
+      }));
+      const solicitudes = solicitudesSnap.docs.map((d) => ({
+        id: d.id,
+        datos: d.data(),
+      }));
+      const elegido = elegirAutorizado(viajes, solicitudes);
 
-    const resultado = await ref.transaction((actual) => {
+      const resultado = await ref.transaction((actual) => {
         const nodo = actual && typeof actual === "object" ? { ...actual } : {};
         if (nodo.reconciliacionGeneracion !== version) {
           return undefined; // llego tarde: ya hay una reconciliacion mas nueva
@@ -99,25 +155,41 @@ function init(db, obtenerRtdb) {
         return nodo;
       });
 
-    const confirmado=resultado.snapshot.val()||{};
-    return {
-      aplicado: Boolean(resultado && resultado.committed),
-      pacienteAutorizado: confirmado.pacienteAutorizado || null,
-      viajeAutorizado: confirmado.viajeAutorizado || null,
-    };
+      const confirmado = resultado.snapshot.val() || {};
+      return {
+        aplicado: Boolean(resultado && resultado.committed),
+        pacienteAutorizado: confirmado.pacienteAutorizado || null,
+        viajeAutorizado: confirmado.viajeAutorizado || null,
+      };
+    });
   }
 
   async function sincronizarCuenta(uid) {
-    const ref=obtenerRtdb().ref(`cuentasAutorizadas/${uid}`);
-    const reserva=await ref.transaction(actual=>({...actual,generacion:(Number.isSafeInteger(actual?.generacion)?actual.generacion:0)+1}));
-    if(!reserva.committed) throw new Error("No se pudo reservar espejo de cuenta.");
-    const generacion=reserva.snapshot.val().generacion;
-    const snap=await db.collection("usuarios").doc(uid).get();
-    const datos=snap.exists?snap.data():{};
-    const activo=datos.activo===true && !datos.operacionCuenta && !datos.bajaEnCurso;
-    await ref.transaction(actual=>{
-      if(actual?.generacion!==generacion) return undefined;
-      return {generacion,activo,rol:datos.rol||null,aprobado:datos.aprobado===true,validoHasta:Date.now()+300000};
+    const ref = obtenerRtdb().ref(`cuentasAutorizadas/${uid}`);
+    return conVistaViva(ref, async () => {
+      const reserva = await ref.transaction((actual) => ({
+        ...actual,
+        generacion:
+          (Number.isSafeInteger(actual?.generacion) ? actual.generacion : 0) +
+          1,
+      }));
+      if (!reserva.committed)
+        throw new Error("No se pudo reservar espejo de cuenta.");
+      const generacion = reserva.snapshot.val().generacion;
+      const snap = await db.collection("usuarios").doc(uid).get();
+      const datos = snap.exists ? snap.data() : {};
+      const activo =
+        datos.activo === true && !datos.operacionCuenta && !datos.bajaEnCurso;
+      await ref.transaction((actual) => {
+        if (actual?.generacion !== generacion) return undefined;
+        return {
+          generacion,
+          activo,
+          rol: datos.rol || null,
+          aprobado: datos.aprobado === true,
+          validoHasta: Date.now() + 300000,
+        };
+      });
     });
   }
 
@@ -135,7 +207,10 @@ function init(db, obtenerRtdb) {
         if (!(await reconciliar(uid)).aplicado) todoBien = false;
       } catch (error) {
         todoBien = false;
-        console.error(`No se pudo reconciliar la autorizacion de ubicacion de ${uid}:`, error);
+        console.error(
+          `No se pudo reconciliar la autorizacion de ubicacion de ${uid}:`,
+          error,
+        );
       }
     }
     return todoBien;

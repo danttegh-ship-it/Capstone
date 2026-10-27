@@ -15,9 +15,20 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getAuth } = require("firebase-admin/auth");
 
-const { validarUid, validarEmail, validarNombre, validarTelefono, validarRol } = require("./validaciones");
+const {
+  validarUid,
+  validarEmail,
+  validarNombre,
+  validarTelefono,
+  validarRol,
+} = require("./validaciones");
 const { registrarAuditoria } = require("./auditoria");
-const { ESTADOS_FINALES, leerContextoArchivo, escribirArchivo, agregarHistorial } = require("./historial");
+const {
+  ESTADOS_FINALES,
+  leerContextoArchivo,
+  escribirArchivo,
+  agregarHistorial,
+} = require("./historial");
 
 /**
  * @param {FirebaseFirestore.Firestore} db
@@ -44,7 +55,10 @@ function init(db, { autorizacion }, authInyectado = null) {
    */
   async function exigirPerfilValido(request, rolesPermitidos = null) {
     if (!request.auth || !request.auth.uid) {
-      throw new HttpsError("unauthenticated", "Debes iniciar sesion para usar esta funcion.");
+      throw new HttpsError(
+        "unauthenticated",
+        "Debes iniciar sesion para usar esta funcion.",
+      );
     }
 
     const uid = validarUid(request.auth.uid);
@@ -52,7 +66,10 @@ function init(db, { autorizacion }, authInyectado = null) {
 
     const doc = await db.collection("usuarios").doc(uid).get();
     if (!doc.exists) {
-      throw new HttpsError("permission-denied", "No tienes un perfil registrado en la app.");
+      throw new HttpsError(
+        "permission-denied",
+        "No tienes un perfil registrado en la app.",
+      );
     }
     const datos = doc.data();
 
@@ -76,11 +93,17 @@ function init(db, { autorizacion }, authInyectado = null) {
     }
 
     if (rol === "chofer" && datos.aprobado !== true) {
-      throw new HttpsError("permission-denied", "Tu cuenta de chofer aun no ha sido aprobada.");
+      throw new HttpsError(
+        "permission-denied",
+        "Tu cuenta de chofer aun no ha sido aprobada.",
+      );
     }
 
     if (rolesPermitidos && !rolesPermitidos.includes(rol)) {
-      throw new HttpsError("permission-denied", "Tu rol no esta autorizado para esta accion.");
+      throw new HttpsError(
+        "permission-denied",
+        "Tu rol no esta autorizado para esta accion.",
+      );
     }
 
     return { uid, rol };
@@ -116,7 +139,10 @@ function init(db, { autorizacion }, authInyectado = null) {
 
     const usuarioExistente = await auth.getUserByEmail(email).catch(() => null);
     if (usuarioExistente) {
-      throw new HttpsError("already-exists", "Ya existe una cuenta con ese correo.");
+      throw new HttpsError(
+        "already-exists",
+        "Ya existe una cuenta con ese correo.",
+      );
     }
 
     const nuevoUsuario = await auth.createUser({ email, emailVerified: false });
@@ -152,27 +178,63 @@ function init(db, { autorizacion }, authInyectado = null) {
 
     const patente = validarPatente(request.data && request.data.patente);
     const licencia = validarLicencia(request.data && request.data.licencia);
-    const modeloVehiculo = (request.data && request.data.modeloVehiculo) || null;
-    const vehiculoAdaptado = Boolean(request.data && request.data.vehiculoAdaptado);
+    const modeloVehiculo =
+      (request.data && request.data.modeloVehiculo) || null;
+    const vehiculoAdaptado = Boolean(
+      request.data && request.data.vehiculoAdaptado,
+    );
     const telefono = validarTelefono(request.data && request.data.telefono);
 
-    await db.runTransaction(async tx => {
-      const ref=db.collection("usuarios").doc(uid);
-      const usuarioDoc=await tx.get(ref);
-      if(usuarioDoc.exists) {
-        const previo=usuarioDoc.data();
-        if(previo.activo!==true || previo.operacionCuenta || previo.bajaEnCurso) throw new HttpsError("permission-denied","Tu cuenta esta desactivada o en proceso de baja.");
-        if(previo.rol && previo.rol!=="chofer") throw new HttpsError("failed-precondition","Esta cuenta ya tiene otro rol asignado.");
-        if(previo.aprobado===true) throw new HttpsError("already-exists","Ya tienes un registro de chofer aprobado.");
+    await db.runTransaction(async (tx) => {
+      const ref = db.collection("usuarios").doc(uid);
+      const usuarioDoc = await tx.get(ref);
+      if (usuarioDoc.exists) {
+        const previo = usuarioDoc.data();
+        if (
+          previo.activo !== true ||
+          previo.operacionCuenta ||
+          previo.bajaEnCurso
+        )
+          throw new HttpsError(
+            "permission-denied",
+            "Tu cuenta esta desactivada o en proceso de baja.",
+          );
+        if (previo.rol && previo.rol !== "chofer")
+          throw new HttpsError(
+            "failed-precondition",
+            "Esta cuenta ya tiene otro rol asignado.",
+          );
+        if (previo.aprobado === true)
+          throw new HttpsError(
+            "already-exists",
+            "Ya tienes un registro de chofer aprobado.",
+          );
       }
-      tx.set(ref,{rol:"chofer",activo:true,aprobado:false,telefono},{merge:true});
-      tx.set(db.collection("choferes_privado").doc(uid),{patente,licencia,modeloVehiculo,vehiculoAdaptado,disponible:false},{merge:true});
+      tx.set(
+        ref,
+        { rol: "chofer", activo: true, aprobado: false, telefono },
+        { merge: true },
+      );
+      tx.set(
+        db.collection("choferes_privado").doc(uid),
+        {
+          patente,
+          licencia,
+          modeloVehiculo,
+          vehiculoAdaptado,
+          disponible: false,
+        },
+        { merge: true },
+      );
     });
 
     await sincronizarClaimRol(uid, "chofer");
     await autorizacion.sincronizarCuenta(uid);
 
-    return { ok: true, mensaje: "Registro enviado. Un administrador debe aprobarlo." };
+    return {
+      ok: true,
+      mensaje: "Registro enviado. Un administrador debe aprobarlo.",
+    };
   });
 
   // ---------------------------------------------------------------------
@@ -182,14 +244,23 @@ function init(db, { autorizacion }, authInyectado = null) {
     await exigirAdmin(request);
     const conductorUid = validarUid(request.data && request.data.uid);
 
-    const usuarioAuth=await auth.getUser(conductorUid);
-    if(usuarioAuth.disabled) throw new HttpsError("failed-precondition","Reactiva la cuenta antes de aprobarla.");
-    await db.runTransaction(async tx=>{
-      const ref=db.collection("usuarios").doc(conductorUid);
-      const doc=await tx.get(ref);
-      if(!doc.exists || doc.data().rol!=="chofer") throw new HttpsError("not-found","No existe ese chofer.");
-      if(!require("./operacionesCuenta").perfilOperativo(doc.data())) throw new HttpsError("failed-precondition","Reactiva la cuenta antes de aprobarla.");
-      tx.update(ref,{aprobado:true});
+    const usuarioAuth = await auth.getUser(conductorUid);
+    if (usuarioAuth.disabled)
+      throw new HttpsError(
+        "failed-precondition",
+        "Reactiva la cuenta antes de aprobarla.",
+      );
+    await db.runTransaction(async (tx) => {
+      const ref = db.collection("usuarios").doc(conductorUid);
+      const doc = await tx.get(ref);
+      if (!doc.exists || doc.data().rol !== "chofer")
+        throw new HttpsError("not-found", "No existe ese chofer.");
+      if (!require("./operacionesCuenta").perfilOperativo(doc.data()))
+        throw new HttpsError(
+          "failed-precondition",
+          "Reactiva la cuenta antes de aprobarla.",
+        );
+      tx.update(ref, { aprobado: true });
     });
     await sincronizarClaimRol(conductorUid, "chofer");
     await autorizacion.sincronizarCuenta(conductorUid);
@@ -207,66 +278,141 @@ function init(db, { autorizacion }, authInyectado = null) {
   // activarDesactivarCuenta / eliminarCuenta: con auto-proteccion y
   // proteccion del ultimo administrador (punto 9.10).
   // ---------------------------------------------------------------------
-  const activarDesactivarCuenta = onCall(async request => {
-    const {uid:actorUid}=await exigirAdmin(request);
-    const objetivoUid=validarUid(request.data?.uid);
-    if(typeof request.data?.activo!=="boolean") throw new HttpsError("invalid-argument","activo debe ser booleano.");
-    const activo=request.data.activo;
-    const ctx=await operaciones.preparar(actorUid,objetivoUid,activo?"activar":"desactivar");
-    await autorizacion.sincronizarCuenta(objetivoUid);
-    const authActualizado=await operaciones.aplicarAuth(objetivoUid,activo);
-    await operaciones.finalizar(ctx,activo && authActualizado);
-    await autorizacion.sincronizarCuenta(objetivoUid);
-    await registrarAuditoria(db,{accion:activo?"activarCuenta":"desactivarCuenta",actorUid,objetivoUid,detalle:{authActualizado}});
-    return {ok:true,authActualizado};
+  const activarDesactivarCuenta = onCall(async (request) => {
+    const { uid: actorUid } = await exigirAdmin(request);
+    const objetivoUid = validarUid(request.data?.uid);
+    if (typeof request.data?.activo !== "boolean")
+      throw new HttpsError("invalid-argument", "activo debe ser booleano.");
+    const activo = request.data.activo;
+    const ctx = await operaciones.preparar(
+      actorUid,
+      objetivoUid,
+      activo ? "activar" : "desactivar",
+    );
+    try {
+      await autorizacion.sincronizarCuenta(objetivoUid);
+      const authActualizado = await operaciones.aplicarAuth(
+        objetivoUid,
+        activo,
+      );
+      await operaciones.finalizar(ctx, activo && authActualizado);
+      await autorizacion.sincronizarCuenta(objetivoUid);
+      await registrarAuditoria(db, {
+        accion: activo ? "activarCuenta" : "desactivarCuenta",
+        actorUid,
+        objetivoUid,
+        detalle: { authActualizado },
+      });
+      if (activo && !authActualizado)
+        throw new HttpsError(
+          "failed-precondition",
+          "No existe la credencial Auth. El perfil sigue desactivado.",
+        );
+      return { ok: true, authActualizado };
+    } catch (error) {
+      await operaciones.reintentar(ctx);
+      throw error;
+    }
   });
 
   // Una unica ruta de baja para cualquier rol. El perfil bloqueado se
   // conserva hasta que archivado, Auth y limpieza hayan terminado.
   async function darDeBaja(actorUid, objetivoUid) {
-    const ctx=await operaciones.preparar(actorUid,objetivoUid,"eliminar");
-    await autorizacion.sincronizarCuenta(objetivoUid);
-    const choferes=new Set();
-    if(ctx.datos.rol==="paciente") {
-      const refs=[db.collection("viajes").doc(objetivoUid)];
-      const solicitudes=await db.collection("solicitudes").where("pacienteId","==",objetivoUid).get();
-      refs.push(...solicitudes.docs.map(d=>d.ref));
-      for(const ref of refs) {
-        const coleccion=ref.path.startsWith("viajes/")?"viajes":"solicitudes";
-        const conductor=await db.runTransaction(async tx=>{
-          const doc=await tx.get(ref);
-          if(!doc.exists) return null;
-          const datos=doc.data();
-          if(datos.estado==="en_viaje") throw new HttpsError("failed-precondition","No se puede borrar un viaje iniciado.");
-          const contexto=await leerContextoArchivo(tx,db,coleccion,ref.id,datos);
-          const cerrado=ESTADOS_FINALES.includes(datos.estado);
-          const finales=cerrado?datos:{...datos,estado:"cancelado",historial:agregarHistorial(datos.historial,"cancelado",actorUid)};
-          escribirArchivo(tx,contexto,{coleccion,id:ref.id,datosFinales:finales,cierre:"cuenta_eliminada"});
-          if(coleccion==="viajes") tx.delete(ref);
-          else if(!cerrado) tx.update(ref,{estado:"cancelado",historial:finales.historial});
-          return datos[coleccion==="viajes"?"choferId":"conductorId"]||null;
-        });
-        if(conductor) choferes.add(conductor);
+    const ctx = await operaciones.preparar(actorUid, objetivoUid, "eliminar");
+    try {
+      await autorizacion.sincronizarCuenta(objetivoUid);
+      const choferes = new Set();
+      if (ctx.datos.rol === "paciente") {
+        const refs = [db.collection("viajes").doc(objetivoUid)];
+        const solicitudes = await db
+          .collection("solicitudes")
+          .where("pacienteId", "==", objetivoUid)
+          .get();
+        refs.push(...solicitudes.docs.map((d) => d.ref));
+        for (const ref of refs) {
+          const coleccion = ref.path.startsWith("viajes/")
+            ? "viajes"
+            : "solicitudes";
+          const conductor = await db.runTransaction(async (tx) => {
+            const doc = await tx.get(ref);
+            if (!doc.exists) return null;
+            const datos = doc.data();
+            if (datos.estado === "en_viaje")
+              throw new HttpsError(
+                "failed-precondition",
+                "No se puede borrar un viaje iniciado.",
+              );
+            const contexto = await leerContextoArchivo(
+              tx,
+              db,
+              coleccion,
+              ref.id,
+              datos,
+            );
+            const cerrado = ESTADOS_FINALES.includes(datos.estado);
+            const finales = cerrado
+              ? datos
+              : {
+                  ...datos,
+                  estado: "cancelado",
+                  historial: agregarHistorial(
+                    datos.historial,
+                    "cancelado",
+                    actorUid,
+                  ),
+                };
+            escribirArchivo(tx, contexto, {
+              coleccion,
+              id: ref.id,
+              datosFinales: finales,
+              cierre: "cuenta_eliminada",
+            });
+            if (coleccion === "viajes") tx.delete(ref);
+            else if (!cerrado)
+              tx.update(ref, {
+                estado: "cancelado",
+                historial: finales.historial,
+              });
+            return (
+              datos[coleccion === "viajes" ? "choferId" : "conductorId"] || null
+            );
+          });
+          if (conductor) choferes.add(conductor);
+        }
       }
+      const authActualizado = await operaciones.aplicarAuth(
+        objetivoUid,
+        false,
+        true,
+      );
+      await db.collection("choferes_privado").doc(objetivoUid).delete();
+      await operaciones.finalizar(ctx, false, true);
+      await autorizacion.sincronizarCuenta(objetivoUid);
+      await registrarAuditoria(db, {
+        accion: "eliminarCuenta",
+        actorUid,
+        objetivoUid,
+        detalle: { authActualizado },
+      });
+      const autorizacionSincronizada = await autorizacion.reconciliarSeguro([
+        ...choferes,
+      ]);
+      return { ok: true, authActualizado, autorizacionSincronizada };
+    } catch (error) {
+      await operaciones.reintentar(ctx);
+      throw error;
     }
-    const authActualizado=await operaciones.aplicarAuth(objetivoUid,false,true);
-    await db.collection("choferes_privado").doc(objetivoUid).delete();
-    await operaciones.finalizar(ctx,false,true);
-    await autorizacion.sincronizarCuenta(objetivoUid);
-    await registrarAuditoria(db,{accion:"eliminarCuenta",actorUid,objetivoUid,detalle:{authActualizado}});
-    const autorizacionSincronizada=await autorizacion.reconciliarSeguro([...choferes]);
-    return {ok:true,authActualizado,autorizacionSincronizada};
   }
-  const eliminarCuenta=onCall(async request=>{
-    const {uid:actorUid}=await exigirAdmin(request);
-    return darDeBaja(actorUid,validarUid(request.data?.uid));
+  const eliminarCuenta = onCall(async (request) => {
+    const { uid: actorUid } = await exigirAdmin(request);
+    return darDeBaja(actorUid, validarUid(request.data?.uid));
   });
 
   // ---------------------------------------------------------------------
   // registrarTokenFcm: guarda/actualiza el token de notificaciones push
   // del usuario autenticado (puntos 9.5, 14.2).
   // ---------------------------------------------------------------------
-  const {registrarTokenFcm,eliminarTokenFcm}=require("./fcm").init(db);
+  const { registrarTokenFcm, eliminarTokenFcm } = require("./fcm").init(db);
 
   // ---------------------------------------------------------------------
   // actualizarDisponibilidad: el chofer activa/desactiva si esta
@@ -276,7 +422,10 @@ function init(db, { autorizacion }, authInyectado = null) {
     const { uid, rol } = await exigirPerfilValido(request, ["chofer"]);
     const disponible = Boolean(request.data && request.data.disponible);
 
-    await db.collection("choferes_privado").doc(uid).set({ disponible }, { merge: true });
+    await db
+      .collection("choferes_privado")
+      .doc(uid)
+      .set({ disponible }, { merge: true });
     return { ok: true, rol, disponible };
   });
 
@@ -292,7 +441,10 @@ function init(db, { autorizacion }, authInyectado = null) {
 
     const doc = await db.collection("usuarios").doc(uidPaciente).get();
     if (doc.exists) {
-      throw new HttpsError("already-exists", "Ya existe un usuario con ese uid.");
+      throw new HttpsError(
+        "already-exists",
+        "Ya existe un usuario con ese uid.",
+      );
     }
 
     await db.collection("usuarios").doc(uidPaciente).set({
@@ -304,7 +456,11 @@ function init(db, { autorizacion }, authInyectado = null) {
     await sincronizarClaimRol(uidPaciente, "paciente");
     await autorizacion.sincronizarCuenta(uidPaciente);
 
-    await registrarAuditoria(db, { accion: "agregarPaciente", actorUid, objetivoUid: uidPaciente });
+    await registrarAuditoria(db, {
+      accion: "agregarPaciente",
+      actorUid,
+      objetivoUid: uidPaciente,
+    });
 
     return { ok: true };
   });
@@ -321,17 +477,22 @@ function init(db, { autorizacion }, authInyectado = null) {
 
     await db.collection("usuarios").doc(uidPaciente).update({ nombre });
 
-    await registrarAuditoria(db, { accion: "modificarPaciente", actorUid, objetivoUid: uidPaciente });
+    await registrarAuditoria(db, {
+      accion: "modificarPaciente",
+      actorUid,
+      objetivoUid: uidPaciente,
+    });
 
     return { ok: true };
   });
 
-  const eliminarPaciente = onCall(async request => {
-    const {uid:actorUid}=await exigirAdmin(request);
-    const objetivoUid=validarUid(request.data?.uid);
-    const doc=await db.collection("usuarios").doc(objetivoUid).get();
-    if(!doc.exists || doc.data().rol!=="paciente") throw new HttpsError("not-found","No existe ese paciente.");
-    return darDeBaja(actorUid,objetivoUid);
+  const eliminarPaciente = onCall(async (request) => {
+    const { uid: actorUid } = await exigirAdmin(request);
+    const objetivoUid = validarUid(request.data?.uid);
+    const doc = await db.collection("usuarios").doc(objetivoUid).get();
+    if (!doc.exists || doc.data().rol !== "paciente")
+      throw new HttpsError("not-found", "No existe ese paciente.");
+    return darDeBaja(actorUid, objetivoUid);
   });
 
   return {

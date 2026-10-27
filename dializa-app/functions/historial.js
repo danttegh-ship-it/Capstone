@@ -49,7 +49,13 @@ function viajeIdDe(coleccion, id, datos) {
   if (datos && typeof datos.viajeId === "string" && datos.viajeId.length > 0) {
     return { viajeId: datos.viajeId, esLegacy: false };
   }
-  const base = ["legacy", sanear(id), sanear(datos && datos.choferId), sanear(datos && datos.fecha), sanear(datos && datos.hora)];
+  const base = [
+    "legacy",
+    sanear(id),
+    sanear(datos && datos.choferId),
+    sanear(datos && datos.fecha),
+    sanear(datos && datos.hora),
+  ];
   return { viajeId: base.join("_").slice(0, 240), esLegacy: true };
 }
 
@@ -65,11 +71,27 @@ async function leerContextoArchivo(tx, db, coleccion, id, datos) {
 
   const archivoRef = db.collection("historial_viajes").doc(viajeId);
   const gpsRef = db.collection("gps_viajes").doc(viajeId);
-  const lecturas = [tx.get(archivoRef), tx.get(gpsRef), tx.get(db.collection("usuarios").doc(pacienteId))];
-  if (conductorId) lecturas.push(tx.get(db.collection("usuarios").doc(conductorId)));
-  const [archivoSnap, gpsSnap, pacienteSnap, conductorSnap] = await Promise.all(lecturas);
+  const lecturas = [
+    tx.get(archivoRef),
+    tx.get(gpsRef),
+    tx.get(db.collection("usuarios").doc(pacienteId)),
+  ];
+  if (conductorId)
+    lecturas.push(tx.get(db.collection("usuarios").doc(conductorId)));
+  const [archivoSnap, gpsSnap, pacienteSnap, conductorSnap] =
+    await Promise.all(lecturas);
 
-  return { viajeId, esLegacy, pacienteId, conductorId, archivoRef, archivoSnap, gpsSnap, pacienteSnap, conductorSnap };
+  return {
+    viajeId,
+    esLegacy,
+    pacienteId,
+    conductorId,
+    archivoRef,
+    archivoSnap,
+    gpsSnap,
+    pacienteSnap,
+    conductorSnap,
+  };
 }
 
 /**
@@ -89,10 +111,15 @@ function escribirArchivo(tx, ctx, { coleccion, id, datosFinales, cierre }) {
       }
     : { conteo: 0, primerTs: null, ultimoTs: null };
 
-  const nombrePaciente = ctx.pacienteSnap && ctx.pacienteSnap.exists ? ctx.pacienteSnap.data().nombre || null : null;
+  const nombrePaciente =
+    ctx.pacienteSnap && ctx.pacienteSnap.exists
+      ? ctx.pacienteSnap.data().nombre || null
+      : null;
   const nombreConductor =
     datosFinales.choferNombre ||
-    (ctx.conductorSnap && ctx.conductorSnap.exists ? ctx.conductorSnap.data().nombre || null : null);
+    (ctx.conductorSnap && ctx.conductorSnap.exists
+      ? ctx.conductorSnap.data().nombre || null
+      : null);
 
   tx.set(ctx.archivoRef, {
     viajeId: ctx.viajeId,
@@ -105,7 +132,9 @@ function escribirArchivo(tx, ctx, { coleccion, id, datosFinales, cierre }) {
     conductorNombre: nombreConductor,
     estadoFinal: datosFinales.estado || "asignado",
     cierre,
-    historial: Array.isArray(datosFinales.historial) ? datosFinales.historial : [],
+    historial: Array.isArray(datosFinales.historial)
+      ? datosFinales.historial
+      : [],
     fecha: datosFinales.fecha || null,
     hora: datosFinales.hora || null,
     origen: datosFinales.origen || null,
@@ -139,11 +168,22 @@ module.exports = {
 // La ruta viajes/{pacienteId} se reutiliza: nunca inferir la instancia de
 // una orden pendiente a partir del documento que haya ahora en esa ruta.
 function exigirInstancia(coleccion, id, datos, esperado) {
-  if (typeof esperado !== "string" || !esperado || esperado.length > 256 || esperado.includes("/")) {
-    throw new HttpsError("invalid-argument", "viajeId de la instancia observada es obligatorio.");
+  if (
+    typeof esperado !== "string" ||
+    !esperado ||
+    esperado.length > 256 ||
+    esperado.includes("/")
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "viajeId de la instancia observada es obligatorio.",
+    );
   }
   if (viajeIdDe(coleccion, id, datos).viajeId !== esperado) {
-    throw new HttpsError("failed-precondition", "El viaje fue reemplazado. Actualiza la pantalla.");
+    throw new HttpsError(
+      "failed-precondition",
+      "El viaje fue reemplazado. Actualiza la pantalla.",
+    );
   }
 }
 module.exports.exigirInstancia = exigirInstancia;

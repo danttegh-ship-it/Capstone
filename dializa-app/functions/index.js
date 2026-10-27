@@ -30,7 +30,9 @@ setGlobalOptions({ region: "southamerica-east1" });
 
 // RTDB se obtiene de forma perezosa (solo al reconciliar la autorizacion de
 // ubicacion), para no exigirla al cargar el modulo.
-const autorizacion = require("./autorizacionUbicacion").init(db, () => getDatabase());
+const autorizacion = require("./autorizacionUbicacion").init(db, () =>
+  getDatabase(),
+);
 const cuentas = require("./cuentas").init(db, { autorizacion });
 const viajes = require("./viajes").init(db, cuentas, { autorizacion });
 const gps = require("./gps").init(db, cuentas);
@@ -61,7 +63,8 @@ exports.rechazarSolicitud = viajes.rechazarSolicitud;
 exports.cancelarAsignacionConductor = viajes.cancelarAsignacionConductor;
 exports.actualizarEstadoViaje = viajes.actualizarEstadoViaje;
 exports.asignarViaje = viajes.asignarViaje;
-exports.sincronizarAutorizacionUbicacion = viajes.sincronizarAutorizacionUbicacion;
+exports.sincronizarAutorizacionUbicacion =
+  viajes.sincronizarAutorizacionUbicacion;
 
 // ---------------------------------------------------------------------
 // GPS acumulado del viaje
@@ -82,7 +85,8 @@ exports.ajustarRutaGps = geoapifyFunciones.ajustarRutaGps;
 // Notificaciones (triggers de Firestore, sin invocacion directa desde el cliente)
 // ---------------------------------------------------------------------
 exports.notificarAsignacionViaje = notificaciones.notificarAsignacionViaje;
-exports.notificarAsignacionSolicitud = notificaciones.notificarAsignacionSolicitud;
+exports.notificarAsignacionSolicitud =
+  notificaciones.notificarAsignacionSolicitud;
 
 // H02: retry real del proveedor ante caida temporal de RTDB. Evento viejo:
 // se recalcula el estado actual, nunca se aplica el payload antiguo.
@@ -96,17 +100,30 @@ function repararUbicacion(campo) {
     for (const uid of uids) await autorizacion.reconciliar(uid);
   };
 }
-exports.reconciliarUbicacionViaje = onDocumentWritten({ document: "viajes/{id}", retry: true }, repararUbicacion("choferId"));
-exports.reconciliarUbicacionSolicitud = onDocumentWritten({ document: "solicitudes/{id}", retry: true }, repararUbicacion("conductorId"));
+exports.reconciliarUbicacionViaje = onDocumentWritten(
+  { document: "viajes/{id}", retry: true },
+  repararUbicacion("choferId"),
+);
+exports.reconciliarUbicacionSolicitud = onDocumentWritten(
+  { document: "solicitudes/{id}", retry: true },
+  repararUbicacion("conductorId"),
+);
 
-exports.sincronizarAccesoCuenta = onDocumentWritten({document:"usuarios/{uid}",retry:true}, event => autorizacion.sincronizarCuenta(event.params.uid));
+exports.sincronizarAccesoCuenta = onDocumentWritten(
+  { document: "usuarios/{uid}", retry: true },
+  (event) => autorizacion.sincronizarCuenta(event.params.uid),
+);
 // TTL de cinco minutos: si los eventos/RTDB fallan, los permisos no quedan
 // vigentes indefinidamente. Renovacion periodica solo desde servidor.
-const {onSchedule}=require("firebase-functions/v2/scheduler");
-exports.renovarAccesosUbicacion = onSchedule("every 2 minutes", async ()=>{
- const perfiles=await db.collection("usuarios").where("activo","==",true).get();
- for(const doc of perfiles.docs) {
-  await autorizacion.sincronizarCuenta(doc.id);
-  if(doc.data().rol==="chofer" && doc.data().aprobado===true) await autorizacion.reconciliar(doc.id);
- }
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+exports.renovarAccesosUbicacion = onSchedule("every 2 minutes", async () => {
+  const perfiles = await db
+    .collection("usuarios")
+    .where("activo", "==", true)
+    .get();
+  for (const doc of perfiles.docs) {
+    await autorizacion.sincronizarCuenta(doc.id);
+    if (doc.data().rol === "chofer" && doc.data().aprobado === true)
+      await autorizacion.reconciliar(doc.id);
+  }
 });

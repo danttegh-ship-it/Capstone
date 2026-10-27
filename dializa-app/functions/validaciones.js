@@ -10,13 +10,19 @@ const config = require("./config");
 
 function requerido(valor, nombreCampo) {
   if (valor === undefined || valor === null || valor === "") {
-    throw new HttpsError("invalid-argument", `El campo '${nombreCampo}' es obligatorio.`);
+    throw new HttpsError(
+      "invalid-argument",
+      `El campo '${nombreCampo}' es obligatorio.`,
+    );
   }
 }
 
 function longitudMaxima(valor, maximo, nombreCampo) {
   if (typeof valor === "string" && valor.length > maximo) {
-    throw new HttpsError("invalid-argument", `El campo '${nombreCampo}' supera los ${maximo} caracteres.`);
+    throw new HttpsError(
+      "invalid-argument",
+      `El campo '${nombreCampo}' supera los ${maximo} caracteres.`,
+    );
   }
 }
 
@@ -40,12 +46,18 @@ function validarEmail(email) {
 function validarPassword(password) {
   requerido(password, "password");
   if (typeof password !== "string" || password.length < 8) {
-    throw new HttpsError("invalid-argument", "La contrasena debe tener al menos 8 caracteres.");
+    throw new HttpsError(
+      "invalid-argument",
+      "La contrasena debe tener al menos 8 caracteres.",
+    );
   }
   const tieneLetra = /[a-zA-Z]/.test(password);
   const tieneNumero = /[0-9]/.test(password);
   if (!tieneLetra || !tieneNumero) {
-    throw new HttpsError("invalid-argument", "La contrasena debe incluir al menos una letra y un numero.");
+    throw new HttpsError(
+      "invalid-argument",
+      "La contrasena debe incluir al menos una letra y un numero.",
+    );
   }
   return password;
 }
@@ -53,14 +65,18 @@ function validarPassword(password) {
 function validarNombre(nombre) {
   requerido(nombre, "nombre");
   if (typeof nombre !== "string" || nombre.trim().length < 2) {
-    throw new HttpsError("invalid-argument", "El nombre debe tener al menos 2 caracteres.");
+    throw new HttpsError(
+      "invalid-argument",
+      "El nombre debe tener al menos 2 caracteres.",
+    );
   }
   longitudMaxima(nombre, 120, "nombre");
   return nombre.trim();
 }
 
 function validarTelefono(telefono) {
-  if (telefono === undefined || telefono === null || telefono === "") return null;
+  if (telefono === undefined || telefono === null || telefono === "")
+    return null;
   const patron = /^[0-9+\-\s]{6,20}$/;
   if (typeof telefono !== "string" || !patron.test(telefono)) {
     throw new HttpsError("invalid-argument", "Telefono invalido.");
@@ -95,13 +111,16 @@ function validarLicencia(licencia) {
 function validarTextoBusqueda(texto) {
   requerido(texto, "texto");
   if (typeof texto !== "string") {
-    throw new HttpsError("invalid-argument", "El texto de busqueda debe ser una cadena.");
+    throw new HttpsError(
+      "invalid-argument",
+      "El texto de busqueda debe ser una cadena.",
+    );
   }
   const limpio = texto.trim();
   if (limpio.length < 3 || limpio.length > 150) {
     throw new HttpsError(
       "invalid-argument",
-      "El texto de busqueda debe tener entre 3 y 150 caracteres."
+      "El texto de busqueda debe tener entre 3 y 150 caracteres.",
     );
   }
   return limpio;
@@ -111,7 +130,12 @@ function validarTextoBusqueda(texto) {
 // pero esta DESACTIVADA por defecto -- ver RESTRICCION_GEOGRAFICA_CHILE_ACTIVA
 // en config.js. Se deja implementada para activarla con un solo cambio.
 function validarCoordenada(lat, lng, { exigirChile = false } = {}) {
-  if (typeof lat !== "number" || typeof lng !== "number" || Number.isNaN(lat) || Number.isNaN(lng)) {
+  if (
+    typeof lat !== "number" ||
+    typeof lng !== "number" ||
+    Number.isNaN(lat) ||
+    Number.isNaN(lng)
+  ) {
     throw new HttpsError("invalid-argument", "lat/lng deben ser numeros.");
   }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
@@ -120,22 +144,32 @@ function validarCoordenada(lat, lng, { exigirChile = false } = {}) {
   if (exigirChile) {
     const dentroDeChile = lat >= -56 && lat <= -17 && lng >= -76 && lng <= -66;
     if (!dentroDeChile) {
-      throw new HttpsError("invalid-argument", "Las coordenadas deben estar dentro de Chile continental.");
+      throw new HttpsError(
+        "invalid-argument",
+        "Las coordenadas deben estar dentro de Chile continental.",
+      );
     }
   }
   return { lat, lng };
 }
 
 function validarWaypoints(waypoints, { minimo = 2, maximo = 25 } = {}) {
-  if (!Array.isArray(waypoints) || waypoints.length < minimo || waypoints.length > maximo) {
+  if (
+    !Array.isArray(waypoints) ||
+    waypoints.length < minimo ||
+    waypoints.length > maximo
+  ) {
     throw new HttpsError(
       "invalid-argument",
-      `Se requieren entre ${minimo} y ${maximo} puntos (waypoints).`
+      `Se requieren entre ${minimo} y ${maximo} puntos (waypoints).`,
     );
   }
   return waypoints.map((punto) => {
     if (!punto || typeof punto !== "object") {
-      throw new HttpsError("invalid-argument", "Cada waypoint debe ser un objeto {lat, lng}.");
+      throw new HttpsError(
+        "invalid-argument",
+        "Cada waypoint debe ser un objeto {lat, lng}.",
+      );
     }
     return validarCoordenada(punto.lat, punto.lng);
   });
@@ -145,16 +179,25 @@ function validarPuntosGps(puntos) {
   if (!Array.isArray(puntos) || puntos.length < 2 || puntos.length > 200) {
     throw new HttpsError(
       "invalid-argument",
-      "Se requieren entre 2 y 200 puntos GPS con timestamp."
+      "Se requieren entre 2 y 200 puntos GPS con timestamp.",
     );
   }
   return puntos.map((punto) => {
     if (!punto || typeof punto !== "object") {
-      throw new HttpsError("invalid-argument", "Cada punto GPS debe ser un objeto.");
+      throw new HttpsError(
+        "invalid-argument",
+        "Cada punto GPS debe ser un objeto.",
+      );
     }
     const { lat, lng } = validarCoordenada(punto.lat, punto.lng);
-    if (typeof punto.timestamp !== "string" || Number.isNaN(Date.parse(punto.timestamp))) {
-      throw new HttpsError("invalid-argument", "Cada punto GPS necesita un timestamp ISO 8601 valido.");
+    if (
+      typeof punto.timestamp !== "string" ||
+      Number.isNaN(Date.parse(punto.timestamp))
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Cada punto GPS necesita un timestamp ISO 8601 valido.",
+      );
     }
     return { lat, lng, timestamp: punto.timestamp };
   });
@@ -165,7 +208,7 @@ function validarModoTransporte(modo) {
   if (!permitidos.includes(modo)) {
     throw new HttpsError(
       "invalid-argument",
-      `modo invalido. Debe ser uno de: ${permitidos.join(", ")}.`
+      `modo invalido. Debe ser uno de: ${permitidos.join(", ")}.`,
     );
   }
   return modo;
@@ -173,7 +216,10 @@ function validarModoTransporte(modo) {
 
 function validarRadioMetros(radio) {
   if (typeof radio !== "number" || radio < 100 || radio > 3000) {
-    throw new HttpsError("invalid-argument", "radioMetros debe estar entre 100 y 3000.");
+    throw new HttpsError(
+      "invalid-argument",
+      "radioMetros debe estar entre 100 y 3000.",
+    );
   }
   return radio;
 }
@@ -190,7 +236,7 @@ function validarCategoriaLugar(categoria) {
   if (!CATEGORIAS_LUGAR_PERMITIDAS.includes(categoria)) {
     throw new HttpsError(
       "invalid-argument",
-      `categoria invalida. Debe ser una de: ${CATEGORIAS_LUGAR_PERMITIDAS.join(", ")}.`
+      `categoria invalida. Debe ser una de: ${CATEGORIAS_LUGAR_PERMITIDAS.join(", ")}.`,
     );
   }
   return categoria;
@@ -200,7 +246,10 @@ const ROLES_VALIDOS = ["admin", "chofer", "paciente"];
 
 function validarRol(rol) {
   if (!ROLES_VALIDOS.includes(rol)) {
-    throw new HttpsError("invalid-argument", `rol invalido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}.`);
+    throw new HttpsError(
+      "invalid-argument",
+      `rol invalido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}.`,
+    );
   }
   return rol;
 }
@@ -218,11 +267,13 @@ const ESTADOS_VALIDOS = [
 
 function validarEstado(estado) {
   if (!ESTADOS_VALIDOS.includes(estado)) {
-    throw new HttpsError("invalid-argument", `estado invalido. Debe ser uno de: ${ESTADOS_VALIDOS.join(", ")}.`);
+    throw new HttpsError(
+      "invalid-argument",
+      `estado invalido. Debe ser uno de: ${ESTADOS_VALIDOS.join(", ")}.`,
+    );
   }
   return estado;
 }
-
 
 // ---------------------------------------------------------------------
 // Fase 1: viajes asignados por el admin, muestras GPS y solicitudes.
@@ -231,12 +282,24 @@ function validarEstado(estado) {
 // Fecha calendario real "YYYY-MM-DD" (rechaza 2026-02-31).
 function validarFecha(fecha) {
   requerido(fecha, "fecha");
-  const m = typeof fecha === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
-  if (!m) throw new HttpsError("invalid-argument", "fecha debe tener formato YYYY-MM-DD.");
+  const m =
+    typeof fecha === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  if (!m)
+    throw new HttpsError(
+      "invalid-argument",
+      "fecha debe tener formato YYYY-MM-DD.",
+    );
   const [anio, mes, dia] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const d = new Date(Date.UTC(anio, mes - 1, dia));
-  if (d.getUTCFullYear() !== anio || d.getUTCMonth() !== mes - 1 || d.getUTCDate() !== dia) {
-    throw new HttpsError("invalid-argument", "fecha no existe en el calendario.");
+  if (
+    d.getUTCFullYear() !== anio ||
+    d.getUTCMonth() !== mes - 1 ||
+    d.getUTCDate() !== dia
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "fecha no existe en el calendario.",
+    );
   }
   return fecha;
 }
@@ -244,7 +307,10 @@ function validarFecha(fecha) {
 function validarHora(hora) {
   requerido(hora, "hora");
   if (typeof hora !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(hora)) {
-    throw new HttpsError("invalid-argument", "hora debe tener formato HH:mm (24 horas).");
+    throw new HttpsError(
+      "invalid-argument",
+      "hora debe tener formato HH:mm (24 horas).",
+    );
   }
   return hora;
 }
@@ -261,26 +327,48 @@ const GPS_ADELANTO_MAXIMO_MS = 60 * 1000;
  * ordenado por tiempo. Rechaza el lote COMPLETO si alguna muestra es
  * invalida (no se acepta "lo que sirva", para que el cliente se entere).
  */
-function validarMuestrasGps(muestras, ahoraMs = Date.now(), antiguedadMaximaMs = GPS_ANTIGUEDAD_MAXIMA_MS) {
-  if (!Array.isArray(muestras) || muestras.length < 1 || muestras.length > GPS_MAX_MUESTRAS_POR_LLAMADA) {
+function validarMuestrasGps(
+  muestras,
+  ahoraMs = Date.now(),
+  antiguedadMaximaMs = GPS_ANTIGUEDAD_MAXIMA_MS,
+) {
+  if (
+    !Array.isArray(muestras) ||
+    muestras.length < 1 ||
+    muestras.length > GPS_MAX_MUESTRAS_POR_LLAMADA
+  ) {
     throw new HttpsError(
       "invalid-argument",
-      `Se requieren entre 1 y ${GPS_MAX_MUESTRAS_POR_LLAMADA} muestras GPS por llamada.`
+      `Se requieren entre 1 y ${GPS_MAX_MUESTRAS_POR_LLAMADA} muestras GPS por llamada.`,
     );
   }
   const vistos = new Set();
   const resultado = [];
   for (const m of muestras) {
     if (!m || typeof m !== "object") {
-      throw new HttpsError("invalid-argument", "Cada muestra GPS debe ser un objeto.");
+      throw new HttpsError(
+        "invalid-argument",
+        "Cada muestra GPS debe ser un objeto.",
+      );
     }
-    const { lat, lng } = validarCoordenada(m.lat, m.lng, { exigirChile: config.RESTRICCION_GEOGRAFICA_CHILE_ACTIVA });
+    const { lat, lng } = validarCoordenada(m.lat, m.lng, {
+      exigirChile: config.RESTRICCION_GEOGRAFICA_CHILE_ACTIVA,
+    });
     const t = m.timestampMs;
     if (!Number.isInteger(t)) {
-      throw new HttpsError("invalid-argument", "timestampMs debe ser un entero (milisegundos epoch).");
+      throw new HttpsError(
+        "invalid-argument",
+        "timestampMs debe ser un entero (milisegundos epoch).",
+      );
     }
-    if (t < ahoraMs - antiguedadMaximaMs || t > ahoraMs + GPS_ADELANTO_MAXIMO_MS) {
-      throw new HttpsError("invalid-argument", "timestampMs fuera de la ventana permitida.");
+    if (
+      t < ahoraMs - antiguedadMaximaMs ||
+      t > ahoraMs + GPS_ADELANTO_MAXIMO_MS
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "timestampMs fuera de la ventana permitida.",
+      );
     }
     if (vistos.has(t)) continue;
     vistos.add(t);
@@ -291,14 +379,22 @@ function validarMuestrasGps(muestras, ahoraMs = Date.now(), antiguedadMaximaMs =
 
 function validarPuntoViaje(punto, nombre) {
   if (!punto || typeof punto !== "object") {
-    throw new HttpsError("invalid-argument", `'${nombre}' es obligatorio y debe ser un objeto {lat, lng, direccion}.`);
+    throw new HttpsError(
+      "invalid-argument",
+      `'${nombre}' es obligatorio y debe ser un objeto {lat, lng, direccion}.`,
+    );
   }
   // Respeta el flag RESTRICCION_GEOGRAFICA_CHILE_ACTIVA (apagado por defecto).
-  const { lat, lng } = validarCoordenada(punto.lat, punto.lng, { exigirChile: config.RESTRICCION_GEOGRAFICA_CHILE_ACTIVA });
+  const { lat, lng } = validarCoordenada(punto.lat, punto.lng, {
+    exigirChile: config.RESTRICCION_GEOGRAFICA_CHILE_ACTIVA,
+  });
   let direccion = null;
   if (punto.direccion !== undefined && punto.direccion !== null) {
     if (typeof punto.direccion !== "string") {
-      throw new HttpsError("invalid-argument", `'${nombre}.direccion' debe ser texto.`);
+      throw new HttpsError(
+        "invalid-argument",
+        `'${nombre}.direccion' debe ser texto.`,
+      );
     }
     longitudMaxima(punto.direccion, 200, `${nombre}.direccion`);
     direccion = punto.direccion.trim() || null;
@@ -307,13 +403,21 @@ function validarPuntoViaje(punto, nombre) {
 }
 
 function validarNecesidades(necesidades) {
-  const n = necesidades === undefined || necesidades === null ? {} : necesidades;
+  const n =
+    necesidades === undefined || necesidades === null ? {} : necesidades;
   if (typeof n !== "object" || Array.isArray(n)) {
-    throw new HttpsError("invalid-argument", "'necesidades' debe ser un objeto.");
+    throw new HttpsError(
+      "invalid-argument",
+      "'necesidades' debe ser un objeto.",
+    );
   }
   const texto = (valor, maximo, campo) => {
     if (valor === undefined || valor === null || valor === "") return null;
-    if (typeof valor !== "string") throw new HttpsError("invalid-argument", `'necesidades.${campo}' debe ser texto.`);
+    if (typeof valor !== "string")
+      throw new HttpsError(
+        "invalid-argument",
+        `'necesidades.${campo}' debe ser texto.`,
+      );
     longitudMaxima(valor, maximo, `necesidades.${campo}`);
     return valor.trim() || null;
   };
@@ -327,7 +431,8 @@ function validarNecesidades(necesidades) {
 
 function validarTextoOpcional(valor, maximo, campo) {
   if (valor === undefined || valor === null || valor === "") return null;
-  if (typeof valor !== "string") throw new HttpsError("invalid-argument", `'${campo}' debe ser texto.`);
+  if (typeof valor !== "string")
+    throw new HttpsError("invalid-argument", `'${campo}' debe ser texto.`);
   longitudMaxima(valor, maximo, campo);
   return valor.trim() || null;
 }
