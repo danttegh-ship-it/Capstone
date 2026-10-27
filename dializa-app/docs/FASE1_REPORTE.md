@@ -1,3 +1,5 @@
+> Actualización 26-10-2026: este documento describe la base histórica. Para los contratos, privacidad, recuperación y límites vigentes de H01–H10 consulte [la entrega actual](REVISION_H01_H10_CODEX.md); ante discrepancias prevalece el código del SHA revisado.
+
 # Reporte de la entrega — Fase 0 + Fase 1
 
 Alcance: backend, modelo de datos, historial, GPS, seed, reglas, correcciones

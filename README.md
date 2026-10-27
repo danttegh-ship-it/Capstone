@@ -1,5 +1,9 @@
 # Dializa App — Proyecto APT Capstone (PTY4614)
 
+Repositorio vigente: https://github.com/danttegh-ship-it/Capstone
+
+Entrega de correcciones técnicas: [H01–H10, pruebas y pendientes](dializa-app/docs/REVISION_H01_H10_CODEX.md). Codex programa e integra por commits; Claude revisa y prepara documentación/PPT. El material académico inferior corresponde a cortes históricos, no acredita por sí solo la versión actual.
+
 Aplicación móvil para coordinar el traslado de pacientes que asisten a
 diálisis. Tiene tres roles: **paciente** (confirma asistencia y si necesita
 ayuda de movilidad), **chofer** (ve sus viajes y avanza su estado) y
@@ -10,7 +14,7 @@ Cloud Functions y Cloud Messaging).
 - **Integrantes:** Dantte García · Javiera Vidal
 - **Docente:** Mario Herrera Salas · Duoc UC, sede Maipú, sección 004D
 - **Nombre anterior:** Dialy-App (Fase 1)
-- **Versión entregada con el Informe de Avance Fase 2:** etiqueta [`entrega-fase2`](https://github.com/DantteG/Capstone/tree/entrega-fase2) (corte semana 9). Ver la sección «Versiones».
+- **Versión entregada con el Informe de Avance Fase 2:** etiqueta [`entrega-fase2`](https://github.com/danttegh-ship-it/Capstone/tree/f79abe8b6ae4c3020fc5a3ca2175eec5349256a6) (corte semana 9). Ver la sección «Versiones».
 
 > **Fases y etapas.** Las *Fases 1, 2 y 3* son las evaluaciones de la
 > asignatura. El desarrollo técnico se divide en *Etapas 0 a 6*. Los documentos

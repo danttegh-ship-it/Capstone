@@ -1,0 +1,158 @@
+Ahora te indicare todo lo que debemos hacer pero por puntos separados, esto te lo estare indicando a medida que leo el texto
+
+y adicionalmente te estare indicando cuales puntos utilizaremos en su proyecto o si utilizaremos del nuestro para adaptarlo en el suyo 
+
+adicionalmente todos los archivos KT o que pertenezcan a kotling se deben adaptar para lenguaje de flutter ya que nuestro proyecto principal sera dializa-app
+
+1)ya que el archivo en cual trabajaremos sera en el dailza-app directamente cambiaremos el lenguaje de programacion para poder trabajar con flutter
+
+2)ya que el firebase es distinto nosotros vamos a tener que adaptar el firebase anterior que realizamos en el daily para dializa-app 
+
+3)vamos a cambiar el enfoque para poder trabajar en sintonia sobre lo que requiere el sistema, ya que es una app de confirmacion de asistencia a sesiones de dialisis trabajaremos con eso, de igual manera no descartes quizas colocar un mapa para que los conductores puedan moverse estilo waze
+
+4)en el apartado del backend me parece perfecto que se pueda reutilizar, pero los datos que nosotros tenemos en nuestro backend adaptalos y cambiarlos para que sean los mismos que tiene en su backend, ahora si no tiene backend utilizaremos nuestro codigo sin modificaciones, siempre y cuando no tenga ningun valor en su backend, en caso de ser asi integraremos el nuestro 
+
+6) comparacion arquitectonica:
+	6.1)Plataforma/Lenguaje: utilizaremos Flutter/Dart 
+	6.2)Proyecto Firebase: Utilizaremos la firebase de la aplicacion dializa-app ya que son firebase propios
+	6.3)auth: Por comodidad utilizaremos el sistema nuestro ya que refleja mayor seguridad en proteccion de los roles
+	6.4)Autorizacion de roles: Utilizaremos un mix entre dializa-app y en nuestra app donde se aplica la lectura del rol desde el firestore y la verificacion que realiza nuestro sistema
+	6.5)base de datos: utilizaremos el nuestro debido a que es mas real y el nuestro utiliza firestore + database 
+	6.6)backend/Cloud functions: utilizaremos lade nuestra app debido a que en la suya no existe nada relacionado a este mismo
+	6.7)Reglas de seguridad: utilizaremos las nuestras debida que nosotros tenemos firestore.rules y database.rules.json para poder ejecutarlas correctamente
+	6.8)mapas: utilizaremos el nuestro por que ya tenemos el maps-compose
+	6.9)Geocodificacion/rutas: esto lo dejaremos pendientes hasta nuevo aviso, ya que no se si ella realmente lo implementara en su archivo final (integralo pero dejalo con la opcion desactivado hasta nuevo aviso)
+	6.10)Notificaciones Push: utilizaremos el nuestro ya que tenemos el FCM
+	6.11)Flujo de viaje: utilizaremos el nuestro debido a que es mas eficiente y asi se evita la gestion manual para los usuarios 
+	6.12)concepto central de la app: utilizaremos el concepto de la otra app ya que es lo que esta pidiendo el segundo usuario (el cliente)
+	6.13)Validacion de datos: utilizaremos el nuestro ya que tenemos nuestro validaciones.json server-side que nos ayuda para la efectividad para el desarrollo de la app
+	6.14)rate limiting/caché: utilizaremos el nuestro ya que estamos adaptando nuestro backend y de paso ya tenemos rateLimit.js y geoapify.js en caso de geoapify me queda un poco la duda si utilizarlo por la inconsistencia con las keys de google que el cliente esta solicitando
+	6.15)test: utilizaremos el nuestro ya que podemos realizar 24 test unitarios + test de reglas escritos 
+	6.16)tamaño del codigo propio: esto es indiferente ya que tenemos que adaptar este proyecto para que funcione da igual el tamañano de la app
+	6.17)documentacion: generacion del README mas la documentacion necesaria para explicar todo lo de la app
+
+7) lista de 100 puntos sobre que le falta a la app de dializa-app frente lo que tiene daily-app apartir del punto 8 al 17 es en donde estan los 100 puntos por puntos separados y reflejando su comparativa
+
+8) 100 puntos (arquitectura general)
+	8.1) proyecto firebase configurado: ambos tienen por ende se ocupa el de la app dializa
+	8.2)firebase auth email/password: ambos tienen por ende se utilizara el mejor de alguno de los dos
+	8.3) Cloud functions v2 desplegadas: aca solo daily app tiene dicha funcion por ende la fuente para reutilizar es firebase/functions/index.js completo
+	8.4) region de cloud functions fijada: aca solo daily app tiene dicha funcion por ende la fuente para reutilizar es: setGlobalOptions en index.js
+	8.5) Secret manager para las claves api: aca solo daily app tiene dicha funcion por ende la fuente para reutilizar es: patron defineSecret()
+	8.6)firestore como base principal: ambos tienen por ende se utilizara el mejor para la aplicacion
+	8.7)Realtime Database: Solo daily app cuent con esta funcion por ende la fuente para reutilizar es: database.rules.json + RealtimeLocationRepository.kt (adaptar para el lenguaje de la app de dializa ya que utilizaremos esta sin perder el enfoque de estamos decidiendo que vamos a mover a la app de dializa)
+	8.8)backend modular: solo daily app cuenta con esta funcion activa por ende hay que adaptarlo para la app de dializa y la fuente para reutilizar es: validaciones.js, rateLimit.js, geoapify.js
+	8.9)node:modules y secretos en gitignore: en la app de dializa ya tieneel node_module pero no cuenta con gitignore por ende hay que implementarlo
+	8.10)separacion UI/logica de negocio: dializa tiene de forma parcial todo lo que tiene daily app, por ende las fuentes que debe utlizar son: patron *ViewModel.kt, llevar a Provider/Riverpod en Dart (esto siempre pensado en utilizar a dializa app como proyecto final y el proyecto que se empezara a utilizar)
+
+9) 100 puntos (autenticacion y roles)
+	9.1)Rol asignado server-side: dializa app tiene de forma parcial por ende las fuentes que debe utilizar son: crearCuentaAdministrador / aprobarConductor, patron de custom claims
+	9.2)verificacion de rol en cada operacion sensible: en caso de dializa no tiene por ende habra que reutilizar codigo de daily app y la fuente para reutilizar es: helper exigirPerfilAutorizado() en index.js
+	9.3)cuenta activa/inactiva (activo=true): en caso de dailiza app no tiene nada de esto por ende hay que reutilizar codigo de daily app, por ende las fuentes para reutilizar es: un boolean activo=true or false
+	9.4)aprovacion de choferes antes de operar: en parte de dializa app no tiene nada de esto por ende hay que reutilizar codigo de daily app, por ende las fuentes para reutilizar es: aprobarConductor
+	9.5)registro de token FCM ligado al usuario: este punto lo tiene de forma parcial, ya que no hay FCM por ende las fuentes para reutilizar son: registrarTokenFcm
+	9.6)Verificacion de correo electronico: por parte del dailiza app no tiene nada de esto, por ende la fuente para reutilizar es: enviarVerificacionCorreo (AuthRepository.kt) (recuerda que todo lo que sea de kotlin se debe modificar para que sea compatible para el trabajo final)
+	9.7)recuperacion de contraseña: dializa app no cuenta con esta funcion por ende hay que reutilizar el codigo nuestro para poder implementarlo, la fuente para reutilizar es: enviarRecuperacionPassword
+	9.8)sesion persistente al reabrir la app: ambas aplicaciones cuentan con esto, por ende utilizaremos la opcion de dializa app para este punto
+	9.9)mensajes de error de logn diferenciados: la aplicacion de dializa app esta de forma pancial, distingue "user-not-found/wrong password" por ende se utilizara esto y se complementara con el codigo que tenemos nosotros
+	9.10)proteccion de ultimo administrador/auto-eliminacion: dializa app le hace falta esto por ende hay que implementarlo desde nuestro codigo por ende la fuente a reutilizar es: contarAdministradoresActivos()
+
+10) 100 puntos (datos y modelos)
+	10.1)coleccion usuarios separados por rol: dializa app le tiene de forma parcial, por ende hau que reutilizar el codigo de daily app para este proyecto, y las fuentes para reutilizar son:modelo usuarios / pacientes / conductores
+	10.2)datos sensibles del conductor separados (patente licencia): aca es interesante ya que dializa app lo tiene en cuenta pero aun no hay datos sobre estos, asi que cuando llegue el momento de rellenarlo hay que estarlo revisando
+	10.3) coleccion de solicitudes de viaje con historial: aca en dializa app le hace falta esto, asi que como en dialy app ya tenemos desarrollado reutilizaremos codigos de este mismo para implementarselo, por ende las fuentes a reutilizar son: crearSolicitudViaje
+	10.4)respuesta de asistencia del paciente: aca dializa app tiene y se debe dejar como esta, ya que tiene la funcion respuesta_paciente asi que se mantiene igual
+	10.5) ID generados server-side: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con la informacion de nuestra app para que contenga esta funcion, fuentes a reutilizar: crearSolicitudViaje genera el id en el servidor
+	10.6)escritura de usuarios via admin SDK unicamente: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con la informacion de nuestra app para que contenga esta funcion, fuentes a reutilizar: firestore.rules
+	10.7)coleccion de auditoria: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con la informacion por ende hay que completarla con la informacion de nuestra app para que contenga dicha funcion, fuentes a utilizar: coleccion auditoria
+	10.8) rate limiting por usuario+accion:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con la informacion de nuestra app para que contenga dicha funcion, fuentes a utilzar: rateLimit.js
+	10.9)indices de firestore declarados: aca en dialza app tiene falta de dicha funcion por ende hay que complementarla con la informacion de nuestra app para que contega dicha funcion, fuentes a utilizar: firestore.indexes.json
+	10.10)hisotiral de cambios de estado de un viaje: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con la informacion de nuestra app para que contega dicha funcion, fuenes a utilizar: campo historial en crearSolicitudViaje
+	10.11)resgistro de fecha/hora de cada respuesta del paciente: aca dializa app nos supera asi que por ende no se realizan modificaciones
+	10.12)uso de subcolecciones: aca en dializa app tiene muchas faltas asi que hay que complementarlo con mayor documentacion
+
+11) 100 puntos (seguridad)
+	11.1)archivo firestore.rules presente y versionado: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion para que contega dicha funcion, fuentes a reutilizar: firestore.rules completo
+	11.2)archivo database.rules.json presente: aca en dializa app tiene falta de dicha funcion oir ende hay que complementarla con nuestra informacion para que contegna dicha funcion, fuentes a reutilizar: database.rules.json completo
+	11.3)reglas por rol: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion para que contenga dicha funcion, fuentes a reutilizar: funciones esAdmin(), esPaciente(), esConductor()
+	11.4)reglas por dueño del documento: aca no comprendo sobre reglas por dueño, asi que integralo pero dejalo desactivado y explica para que sirve y por que esta ahi, luego te dare indicaciones sobre activarlo o quitarlo
+	11.5)prohibicion de escritura directa en colecciones sensibles: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, funciones a reutilizar: firestore.rules: create:false, write:false
+	11.6)validacion de payload servser-side: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes para reutilizar: validaciones.js
+	11.7) claves de api nunca en el cliente: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: defineSecret()
+	11.8)claves de api nunca en git/firestore/rtdb: aca lo marca como pendiente y como politica nuestra esta documentada en el readme de daily app asi que tambien recreala la misma en la app de dailiza
+	11.9)validacion de formato de coordenada: en este caso menciona no aplicar, integralo al sistema pero dejalo como desactivado en caso de requerirlo, activarlo
+	11.10)restriccion geografica) este caso menciona no aplicar, integralo al sistema pero dejalo como desactivado en caso de requerirlo, activarlo
+	11.11)proteccion contra escritura de campos no permitidos:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: regla de conductores/{uid} en firestore.rules/Tiene (diff().affectedKeys().hasOnly)
+	11.12)manejo de HttpsError con codigos estandar: en este caso no se como adminitrarlo, ya que analisaste el caso a profundidad, crea la funcion, en caso de no requerirla, no la crees
+	11.13)google-services.json en gitignore o manejado con cuidado: no se menciona en ninguna parte del repo sobre excluirse o incluirse, integra la funcion pero dejalo desactivado para que no choque con ninguna otra funcion en caso de necesitarla activarla
+	11.14)permisos de android/IOS pedidos de forma explicita y escalonada:en este caso dice no aplicar aun, asi que crea la funcion y dejalo desactivada, en caso de necesitarla activarla
+	11.15)manejo de secreto en variables de entorno/Secret Manager, nunca harcodeado:en este caso esta pendiente en el caso de dailiza app, por ende hay que complementarlo con nuestra informacion para que tenga dicha funcion, fuente a reutilizar:defineSecret() en index.js
+	
+12) 100 puntos (Geolocalizacion, mapas y APIS de Geoapify)
+	12.1) Google Maps SDK integrado:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: MapaGoogle.kt como referencia (portar a google_maps_flutter)
+	12.2)autocompletado de direcciones: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: funcion buscarDirecciones
+	12.3)geocodificacion directa (texto a coordenadas): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: funcion geocodificar
+	12.4)geocodificacion inversa (coordenadas a texto): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:funcion obtenerDireccionInversa
+	12.5) calculo de rutas: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: funcion calcularRuta
+	12.6:busqueda de lugares cercanos (POIs):aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: funcion buscarLugaresCercanos
+	12.7Map Matching (ajustar puntos GPS a la via): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: nuevo, a construir usando la tercera API key
+	12.8)ubicacion en tiempo real del conductor: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:RealtimeLocationRepository.kt + UbicacionForegroundService.kt (cambiar el lenguaje al lenguaje del proyecto de dializa)
+	12.9)obtencion de ubicacion actual con timeout: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:UbicacionActual.kt (adaptar el lenguaje para el proyecto dializa)
+	12.10)conversion de conversaciones de coordenadas documentada: esto no es necesario ya que la aplicacion sera solamente en español
+	12.11) cache de resultado de ceocoding/rutas: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:geoapify.js
+	12.12) reintento con backoff solo en 429/5xx: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: fetchConReintento en geoapify.js
+	12.13)polilinea de ruta codificada para dibujar el mapa:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: codificarPolylineGoogle()
+	12.14)filtro de categorias de lugares(ej: salud/farmacias): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: validarCategoriaLugar	
+	12.15)radio de busqueda validado(100-3000m): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: validarRadioMetros
+
+13) 100 puntos (flujo de negocio/viaje)
+	13.1)solicitud de viaje bajo demanda por el paciente: en dializa app esta incompleto, por ende hay que complementarlo con nuestro codigo y dejarlo totalmente funcional, fuente para reutilizar: crearSolicitudViaje
+	13.2)maquina de estados del viaje completa: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: actualizarEstadoViaje + docs/ESTADOS_VIAJE.md
+	13.3)aceptacion de solicitud por un conductor disponible: aca no aplica ya que sera que el conductor puede elegir, fuente para reutilizar: aceptarSolicitud
+	13.4)rechazo de solicitud por el conductor: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: rechazarSolicitud
+	13.5)disponibilidad del conductor:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: campo disponible en conductores
+	13.6)Confirmacion de asistencia del paciente a una cita: aca dializa app tiene la ventaja asi que se mantendra igual ya que la aplicacion en la que trabajaremos sera dializa app
+	13.7)indicador de necesidad de ayuda de movilidad reducida: ambos programa lo tienen por ende es mejor fusionarlos	
+	13.8)asignacion de chofer y horario a un paciente: utilizaremos la version de dializa app ya que es mas simple que la aplicacion que hemos desarrollado
+	13.9)vista del conductor con lista de viajes asignados: ambos programas tienen este punto pero lo vamos a fusionar, con la simplicidad de dializa app con los dashboards e interactividad que tiene daily app
+	13.10)panel de administrador para gestionar pacientes:utilizaremos la version de dializa ya que esta mas desarrollada que la nuestra
+	13.11)panel de administrador para gestionar conductores:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:aprobarConductor
+	13.12)Registro de choferes con datos de vehiculo: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:solicitarRegistroConductor
+	13.13)reasignacion de chofer/hora: utilizaremos la version de dializa ya que esta mucho mas desarrollada que la nuestra
+	
+14) 100 puntos (notificaciones)
+	14.1)Firebase Cloud Messaging integrado: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:DailyAppMessagingService.kt (adaptarlo al mismo lenguaje que utiliza dializa app)
+	14.2)Registro de token FCM al iniciar sesion: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:registrarTokenFcmActual()
+	14.3)Notificacion push al paciente cuando se le asigna chofer: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: onNewToken + CloudFuntion de notificacion
+	14.4)Deep link desde la notificacion a la pantalla del viaje: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:PendingIntent con extra solicitudld
+	14.5)permiso POST_NOTIFICATIONS solicitando explicitamente: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: aca adaptarlo a todos los sistemas disponibles 
+
+15) 100 puntos (UI/UX)
+	15.1)Tema visual material 3: utilizar cualquiera de los dos
+	15.2)textos grandes pensando para adultos mayores: utilizaremos la version de dializa app ya que esta mas avanzado en eso que nosotros
+	15.3)feedback de carga(spinners) en botones: utilizar cualquiera ya que ambos lo tienen
+	15.4)manejo de errores visibles al usuario:Ambos lo tienen sin embargo el nuestro esta mas avanzado por ende es buena idea fusionarlos
+	15.5)navegacion por rol tras login(paciente/conductor/admin): aca utilizaremos la version de dializa ya que aun que el nuestro sea mas robusto es menos problematico para los usuarios
+	15.6)formulario de solicitud con autcompletado en vivo: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: FormularioSolicitudMovil en PacienteDashboardScreen.kt (cambiar los archivos kt por el lenguaje que utilize la app dializa)
+	15.7)confirmacion visual al guardar una accion (snackbar): utilizaremos la version de dializa app ya que esta mas desarrollada que la nuestra
+	15.8)diseño responsive multiplataforma: utiizaremos la version de dializa app ya que tiene flutter y corre en muchas mas opciones que solo en android
+
+
+16 100 puntos (testing)
+	16.1) test unitarios de validaciones: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: test/validaciones.test.js como referencia de casos a cubrir el dart
+	16.2)tests de reglas de Firestore: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: firestore.rules.test.js
+	16.3)test de reglas de Realtime Database: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: database.rules.test.js
+	16.4)test widgets/UI:utilizaremos la version de dializa por que esta mejor implementada y utiliza bien sus recursos, fuentes a reutilizar: adaptar widget_test.dart a las pantallas actuales
+	16.5)verificacion honetsta de que se ejecuto vs que no en el readme: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: seccion de verificacion en el readme.md de dializa app
+	16.6 chequeo de sintaxis/compilacion como minimo (sin entorno completo):aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: metofologia de verificacion estatica similar a daily app (esta app ahora es el trabajo principal)
+
+17 100 puntos (documentacion y configuracion)
+	17.1)README especifico del proyecto (no el generico de la plantilla): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: generar el readme con toda la documentacion de la app
+	17.2)documentacion de arquitectura separada: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: docs/ARQUITECTURA
+	17.3)documentacion de configuracion paso a paso: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: docs/CONFIGURACION.md
+	17.4)documentacion del flujo/estado del negocio: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: docs/ESTADOS_VIAJE.md, adaptado al flujo mas simple de dializa
+
+
+
+
+
