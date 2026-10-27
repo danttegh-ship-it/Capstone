@@ -1,33 +1,33 @@
 Ahora te indicare todo lo que debemos hacer pero por puntos separados, esto te lo estare indicando a medida que leo el texto
 
-y adicionalmente te estare indicando cuales puntos utilizaremos en su proyecto o si utilizaremos del nuestro para adaptarlo en el suyo 
+y adicionalmente te estare indicando cuales puntos utilizaremos en su proyecto o si utilizaremos del nuestro para adaptarlo en el suyo
 
 adicionalmente todos los archivos KT o que pertenezcan a kotling se deben adaptar para lenguaje de flutter ya que nuestro proyecto principal sera dializa-app
 
 1)ya que el archivo en cual trabajaremos sera en el dailza-app directamente cambiaremos el lenguaje de programacion para poder trabajar con flutter
 
-2)ya que el firebase es distinto nosotros vamos a tener que adaptar el firebase anterior que realizamos en el daily para dializa-app 
+2)ya que el firebase es distinto nosotros vamos a tener que adaptar el firebase anterior que realizamos en el daily para dializa-app
 
 3)vamos a cambiar el enfoque para poder trabajar en sintonia sobre lo que requiere el sistema, ya que es una app de confirmacion de asistencia a sesiones de dialisis trabajaremos con eso, de igual manera no descartes quizas colocar un mapa para que los conductores puedan moverse estilo waze
 
-4)en el apartado del backend me parece perfecto que se pueda reutilizar, pero los datos que nosotros tenemos en nuestro backend adaptalos y cambiarlos para que sean los mismos que tiene en su backend, ahora si no tiene backend utilizaremos nuestro codigo sin modificaciones, siempre y cuando no tenga ningun valor en su backend, en caso de ser asi integraremos el nuestro 
+4)en el apartado del backend me parece perfecto que se pueda reutilizar, pero los datos que nosotros tenemos en nuestro backend adaptalos y cambiarlos para que sean los mismos que tiene en su backend, ahora si no tiene backend utilizaremos nuestro codigo sin modificaciones, siempre y cuando no tenga ningun valor en su backend, en caso de ser asi integraremos el nuestro
 
 6) comparacion arquitectonica:
-	6.1)Plataforma/Lenguaje: utilizaremos Flutter/Dart 
+	6.1)Plataforma/Lenguaje: utilizaremos Flutter/Dart
 	6.2)Proyecto Firebase: Utilizaremos la firebase de la aplicacion dializa-app ya que son firebase propios
 	6.3)auth: Por comodidad utilizaremos el sistema nuestro ya que refleja mayor seguridad en proteccion de los roles
 	6.4)Autorizacion de roles: Utilizaremos un mix entre dializa-app y en nuestra app donde se aplica la lectura del rol desde el firestore y la verificacion que realiza nuestro sistema
-	6.5)base de datos: utilizaremos el nuestro debido a que es mas real y el nuestro utiliza firestore + database 
+	6.5)base de datos: utilizaremos el nuestro debido a que es mas real y el nuestro utiliza firestore + database
 	6.6)backend/Cloud functions: utilizaremos lade nuestra app debido a que en la suya no existe nada relacionado a este mismo
 	6.7)Reglas de seguridad: utilizaremos las nuestras debida que nosotros tenemos firestore.rules y database.rules.json para poder ejecutarlas correctamente
 	6.8)mapas: utilizaremos el nuestro por que ya tenemos el maps-compose
 	6.9)Geocodificacion/rutas: esto lo dejaremos pendientes hasta nuevo aviso, ya que no se si ella realmente lo implementara en su archivo final (integralo pero dejalo con la opcion desactivado hasta nuevo aviso)
 	6.10)Notificaciones Push: utilizaremos el nuestro ya que tenemos el FCM
-	6.11)Flujo de viaje: utilizaremos el nuestro debido a que es mas eficiente y asi se evita la gestion manual para los usuarios 
+	6.11)Flujo de viaje: utilizaremos el nuestro debido a que es mas eficiente y asi se evita la gestion manual para los usuarios
 	6.12)concepto central de la app: utilizaremos el concepto de la otra app ya que es lo que esta pidiendo el segundo usuario (el cliente)
 	6.13)Validacion de datos: utilizaremos el nuestro ya que tenemos nuestro validaciones.json server-side que nos ayuda para la efectividad para el desarrollo de la app
 	6.14)rate limiting/caché: utilizaremos el nuestro ya que estamos adaptando nuestro backend y de paso ya tenemos rateLimit.js y geoapify.js en caso de geoapify me queda un poco la duda si utilizarlo por la inconsistencia con las keys de google que el cliente esta solicitando
-	6.15)test: utilizaremos el nuestro ya que podemos realizar 24 test unitarios + test de reglas escritos 
+	6.15)test: utilizaremos el nuestro ya que podemos realizar 24 test unitarios + test de reglas escritos
 	6.16)tamaño del codigo propio: esto es indiferente ya que tenemos que adaptar este proyecto para que funcione da igual el tamañano de la app
 	6.17)documentacion: generacion del README mas la documentacion necesaria para explicar todo lo de la app
 
@@ -87,7 +87,7 @@ adicionalmente todos los archivos KT o que pertenezcan a kotling se deben adapta
 	11.13)google-services.json en gitignore o manejado con cuidado: no se menciona en ninguna parte del repo sobre excluirse o incluirse, integra la funcion pero dejalo desactivado para que no choque con ninguna otra funcion en caso de necesitarla activarla
 	11.14)permisos de android/IOS pedidos de forma explicita y escalonada:en este caso dice no aplicar aun, asi que crea la funcion y dejalo desactivada, en caso de necesitarla activarla
 	11.15)manejo de secreto en variables de entorno/Secret Manager, nunca harcodeado:en este caso esta pendiente en el caso de dailiza app, por ende hay que complementarlo con nuestra informacion para que tenga dicha funcion, fuente a reutilizar:defineSecret() en index.js
-	
+
 12) 100 puntos (Geolocalizacion, mapas y APIS de Geoapify)
 	12.1) Google Maps SDK integrado:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: MapaGoogle.kt como referencia (portar a google_maps_flutter)
 	12.2)autocompletado de direcciones: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: funcion buscarDirecciones
@@ -102,7 +102,7 @@ adicionalmente todos los archivos KT o que pertenezcan a kotling se deben adapta
 	12.11) cache de resultado de ceocoding/rutas: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:geoapify.js
 	12.12) reintento con backoff solo en 429/5xx: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: fetchConReintento en geoapify.js
 	12.13)polilinea de ruta codificada para dibujar el mapa:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: codificarPolylineGoogle()
-	12.14)filtro de categorias de lugares(ej: salud/farmacias): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: validarCategoriaLugar	
+	12.14)filtro de categorias de lugares(ej: salud/farmacias): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: validarCategoriaLugar
 	12.15)radio de busqueda validado(100-3000m): aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: validarRadioMetros
 
 13) 100 puntos (flujo de negocio/viaje)
@@ -112,20 +112,20 @@ adicionalmente todos los archivos KT o que pertenezcan a kotling se deben adapta
 	13.4)rechazo de solicitud por el conductor: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: rechazarSolicitud
 	13.5)disponibilidad del conductor:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: campo disponible en conductores
 	13.6)Confirmacion de asistencia del paciente a una cita: aca dializa app tiene la ventaja asi que se mantendra igual ya que la aplicacion en la que trabajaremos sera dializa app
-	13.7)indicador de necesidad de ayuda de movilidad reducida: ambos programa lo tienen por ende es mejor fusionarlos	
+	13.7)indicador de necesidad de ayuda de movilidad reducida: ambos programa lo tienen por ende es mejor fusionarlos
 	13.8)asignacion de chofer y horario a un paciente: utilizaremos la version de dializa app ya que es mas simple que la aplicacion que hemos desarrollado
 	13.9)vista del conductor con lista de viajes asignados: ambos programas tienen este punto pero lo vamos a fusionar, con la simplicidad de dializa app con los dashboards e interactividad que tiene daily app
 	13.10)panel de administrador para gestionar pacientes:utilizaremos la version de dializa ya que esta mas desarrollada que la nuestra
 	13.11)panel de administrador para gestionar conductores:aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:aprobarConductor
 	13.12)Registro de choferes con datos de vehiculo: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:solicitarRegistroConductor
 	13.13)reasignacion de chofer/hora: utilizaremos la version de dializa ya que esta mucho mas desarrollada que la nuestra
-	
+
 14) 100 puntos (notificaciones)
 	14.1)Firebase Cloud Messaging integrado: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:DailyAppMessagingService.kt (adaptarlo al mismo lenguaje que utiliza dializa app)
 	14.2)Registro de token FCM al iniciar sesion: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:registrarTokenFcmActual()
 	14.3)Notificacion push al paciente cuando se le asigna chofer: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: onNewToken + CloudFuntion de notificacion
 	14.4)Deep link desde la notificacion a la pantalla del viaje: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar:PendingIntent con extra solicitudld
-	14.5)permiso POST_NOTIFICATIONS solicitando explicitamente: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: aca adaptarlo a todos los sistemas disponibles 
+	14.5)permiso POST_NOTIFICATIONS solicitando explicitamente: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: aca adaptarlo a todos los sistemas disponibles
 
 15) 100 puntos (UI/UX)
 	15.1)Tema visual material 3: utilizar cualquiera de los dos
@@ -151,8 +151,3 @@ adicionalmente todos los archivos KT o que pertenezcan a kotling se deben adapta
 	17.2)documentacion de arquitectura separada: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: docs/ARQUITECTURA
 	17.3)documentacion de configuracion paso a paso: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: docs/CONFIGURACION.md
 	17.4)documentacion del flujo/estado del negocio: aca en dializa app tiene falta de dicha funcion por ende hay que complementarla con nuestra informacion que contenga dicha funcion, fuentes a reutilizar: docs/ESTADOS_VIAJE.md, adaptado al flujo mas simple de dializa
-
-
-
-
-
