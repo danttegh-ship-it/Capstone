@@ -11,7 +11,6 @@ void main() {
     'H08 fallo de envio conserva lote y reintento es idempotente por timestamp',
     () async {
       String? storage;
-      bool fail = true;
       final sent = <Map<String, dynamic>>[];
       final queue = ColaGps(
         read: () async => storage,
@@ -20,8 +19,7 @@ void main() {
         },
         send: (d) async {
           sent.add(d);
-          if (fail) throw StateError('sin red');
-          return {'guardadas': (d['muestras'] as List).length, 'duplicadas': 0};
+          throw StateError('sin red');
         },
       );
       await queue.add(trip, {'lat': -33.0, 'lng': -70.0, 'timestampMs': 1234});

@@ -40,7 +40,7 @@ dependencies:
   # Agregados para llamar a las Cloud Functions que hacen de proxy hacia
   # Geoapify (geocoding, routing, map matching) - la app nunca llama a
   # Geoapify directo ni conoce las API keys.
-  cloud_functions: ^6.5.1
+  cloud_functions: ^6.3.6
   # Mapa basado en OpenStreetMap: no requiere ninguna API key (a
   # diferencia de Google Maps SDK, que necesitaria una clave propia que
   # todavia no se ha generado para este proyecto). Sirve para mostrar el
@@ -108,3 +108,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+

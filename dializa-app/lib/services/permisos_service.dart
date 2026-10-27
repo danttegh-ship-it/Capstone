@@ -16,11 +16,11 @@ class PermisosService {
   /// Paso 1: pide ubicación aproximada. Paso 2: si la función que llama
   /// necesita precisión (por ejemplo, mostrar al chofer en el mapa en
   /// tiempo real), pide ubicación precisa como un segundo paso separado.
-  Future<bool> solicitarPermisosUbicacionEscalonado({required bool requierePrecisión}) async {
+  Future<bool> solicitarPermisosUbicacionEscalonado({required bool requierePrecision}) async {
     final estadoAproximada = await Permission.locationWhenInUse.request();
     if (!estadoAproximada.isGranted) return false;
 
-    if (!requierePrecisión) return true;
+    if (!requierePrecision) return true;
 
     // En Android, pedir ubicación "precisa" es otro permiso aparte
     // (ACCESS_FINE_LOCATION) desde Android 12; permission_handler lo

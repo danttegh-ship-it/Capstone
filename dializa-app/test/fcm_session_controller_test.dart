@@ -51,4 +51,33 @@ void main() {
     await close;
     expect(calls, ['registro', 'revocar', 'borrar']);
   });
+  test(
+    'H05 cierre concurrente invalida token aunque falle la revocacion',
+    () async {
+      final pending = Completer<void>();
+      var revokes = 0;
+      var deletes = 0;
+      final controller = FcmSessionController(
+        currentUid: () => 'A',
+        getToken: () async => 'token',
+        register: (u, s, t) async {},
+        revoke: (_) async {
+          revokes++;
+          await pending.future;
+          throw StateError('sin red');
+        },
+        deleteToken: () async {
+          deletes++;
+        },
+      );
+      controller.sessionChanged('A');
+      await Future<void>.delayed(Duration.zero);
+      final first = controller.close();
+      final second = controller.close();
+      pending.complete();
+      await Future.wait([first, second]);
+      expect(revokes, 1);
+      expect(deletes, 1);
+    },
+  );
 }

@@ -23,12 +23,14 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
         if (!await (await SharedPreferences.getInstance()).setString(
           'gps_$uid',
           json,
-        ))
+        )) {
           throw StateError('No se pudo guardar GPS en el dispositivo.');
+        }
       },
       send: (data) async {
-        if (FirebaseAuth.instance.currentUser?.uid != uid)
+        if (FirebaseAuth.instance.currentUser?.uid != uid) {
           throw StateError('La sesion del chofer cambio.');
+        }
         final result =
             await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
                 .httpsCallable('registrarMuestrasGps')
@@ -113,7 +115,9 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       await _pararSensor();
       _actual = null;
       _mensaje(
-        candidatos.isEmpty ? 'GPS listo: se activa al iniciar el viaje.' : 'Hay varios viajes iniciados. Resuelve la asignacion antes de registrar GPS.',
+        candidatos.isEmpty
+            ? 'GPS listo: se activa al iniciar el viaje.'
+            : 'Hay varios viajes iniciados. Resuelve la asignacion antes de registrar GPS.',
       );
       return;
     }
@@ -123,18 +127,24 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _pararSensor();
       _actual = trip;
-      if (!await Geolocator.isLocationServiceEnabled())
+      if (!await Geolocator.isLocationServiceEnabled()) {
         throw StateError('Activa el GPS del dispositivo.');
+      }
       var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied)
+      if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
+      }
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever)
+          permission == LocationPermission.deniedForever) {
         throw StateError(
           'Concede permiso de ubicacion para registrar el recorrido.',
         );
-      if (_cerrado || !_activo || FirebaseAuth.instance.currentUser?.uid != uid)
+      }
+      if (_cerrado ||
+          !_activo ||
+          FirebaseAuth.instance.currentUser?.uid != uid) {
         return;
+      }
       _posiciones =
           Geolocator.getPositionStream(
             locationSettings: const LocationSettings(
@@ -143,6 +153,11 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
             ),
           ).listen(
             (position) {
+              if (_cerrado ||
+                  !_activo ||
+                  FirebaseAuth.instance.currentUser?.uid != uid) {
+                return;
+              }
               final point = {
                 'lat': position.latitude,
                 'lng': position.longitude,
@@ -180,8 +195,11 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _enviar() async {
-    if (_cerrado || _enviando || FirebaseAuth.instance.currentUser?.uid != uid)
+    if (_cerrado ||
+        _enviando ||
+        FirebaseAuth.instance.currentUser?.uid != uid) {
       return;
+    }
     _enviando = true;
     try {
       await cola.flush();
@@ -222,6 +240,12 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
                   .get(const GetOptions(source: Source.server)))
               .docs;
       await tracker._reconciliar();
+    }
+  }
+
+  static Future<void> detenerSiCambio(String? uidActual) async {
+    for (final tracker in _instancias.toList()) {
+      if (tracker.uid != uidActual) await tracker.cerrar();
     }
   }
 

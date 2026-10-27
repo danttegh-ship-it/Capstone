@@ -105,8 +105,9 @@ class _ChoferHomeState extends State<ChoferHome> {
         UbicacionError(mensaje: final m) => 'Error: $m',
         _ => 'No se pudo obtener tu ubicación.',
       };
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(mensaje)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensaje)));
     }
 
     if (mounted) setState(() => _compartiendoUbicacion = false);
@@ -131,7 +132,24 @@ class _ChoferHomeState extends State<ChoferHome> {
           );
         }
 
+        if (snapshotUsuario.data?.data()?['activo'] != true) {
+          _seguimiento = null;
+          unawaited(SeguimientoGps.detenerTodos());
+          return Scaffold(
+            appBar: AppBar(title: const Text('Cuenta desactivada')),
+            body: Center(
+              child: TextButton(
+                onPressed: _cerrarSesion,
+                child: const Text('Cerrar sesion'),
+              ),
+            ),
+          );
+        }
         if (!aprobado) {
+          if (_seguimiento != null) {
+            _seguimiento = null;
+            unawaited(SeguimientoGps.detenerTodos());
+          }
           return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
             future: _firestore
                 .collection('choferes_privado')
@@ -158,18 +176,6 @@ class _ChoferHomeState extends State<ChoferHome> {
           );
         }
 
-        if (snapshotUsuario.data?.data()?['activo'] != true) {
-          unawaited(SeguimientoGps.detenerTodos());
-          return Scaffold(
-            appBar: AppBar(title: const Text('Cuenta desactivada')),
-            body: Center(
-              child: TextButton(
-                onPressed: _cerrarSesion,
-                child: const Text('Cerrar sesion'),
-              ),
-            ),
-          );
-        }
         if (_seguimiento == null) {
           _seguimiento = SeguimientoGps(uidChofer);
           unawaited(_seguimiento!.iniciar());
@@ -643,8 +649,9 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
   ) async {
     setState(() => _enviando = true);
     try {
-      if (nuevoEstado == 'finalizado')
+      if (nuevoEstado == 'finalizado') {
         await SeguimientoGps.prepararCierre(viajeId);
+      }
       await _functions
           .httpsCallable('actualizarEstadoViaje')
           .call<Map<String, dynamic>>({
@@ -656,8 +663,9 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
           });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo actualizar: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $e')));
         unawaited(SeguimientoGps.reanudarTodos().catchError((Object _) {}));
       }
     } finally {
@@ -681,8 +689,9 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
           });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo cancelar: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('No se pudo cancelar: $e')));
       }
     } finally {
       if (mounted) setState(() => _enviando = false);

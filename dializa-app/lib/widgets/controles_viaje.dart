@@ -27,10 +27,11 @@ class ControlesViaje extends StatelessWidget {
       'conductor_llego': 'Iniciar viaje',
       'en_viaje': 'Finalizar viaje',
     };
-    if (estado == 'finalizado' || estado == 'cancelado')
+    if (estado == 'finalizado' || estado == 'cancelado') {
       return Text(
         estado == 'finalizado' ? 'Viaje finalizado.' : 'Viaje cancelado.',
       );
+    }
     final siguiente = siguientes[estado];
     return Row(
       children: [

@@ -54,9 +54,9 @@ class AuthService {
           .call<void>({'token': token, 'sesionId': session});
     },
     revoke: (session) async {
-      await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
-          .httpsCallable('eliminarTokenFcm')
-          .call<void>({'sesionId': session});
+      await FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      ).httpsCallable('eliminarTokenFcm').call<void>({'sesionId': session});
     },
     deleteToken: () => FirebaseMessaging.instance.deleteToken(),
   );
@@ -72,6 +72,7 @@ class AuthService {
     _suscripcionSesion = FirebaseAuth.instance.authStateChanges().listen((
       user,
     ) {
+      unawaited(SeguimientoGps.detenerSiCambio(user?.uid));
       _controller.sessionChanged(user?.uid);
     });
   }

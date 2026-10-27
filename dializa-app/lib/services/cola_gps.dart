@@ -13,7 +13,7 @@ class ColaGps {
   Future<void>? _load;
   Future<T> _serial<T>(Future<T> Function() action) {
     final result = _tail.then((_) => action());
-    _tail = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    _tail = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return result;
   }
 
@@ -45,10 +45,11 @@ class ColaGps {
       );
       final points = item['muestras'] as List;
       if (points.any((p) => p['timestampMs'] == point['timestampMs'])) return;
-      if (points.length >= 5000)
+      if (points.length >= 5000) {
         throw StateError(
           'Cola GPS llena. Conecta el dispositivo antes de continuar.',
         );
+      }
       points.add(Map<String, dynamic>.from(point));
       await _save();
     });

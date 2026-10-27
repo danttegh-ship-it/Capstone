@@ -63,7 +63,9 @@ class _TarjetaConductor extends StatefulWidget {
 }
 
 class _TarjetaConductorState extends State<_TarjetaConductor> {
-  final _functions = FirebaseFunctions.instanceFor(region: 'southamerica-east1');
+  final _functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
   bool _procesando = false;
   String? _error;
 
@@ -73,7 +75,9 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
       _error = null;
     });
     try {
-      await _functions.httpsCallable('aprobarConductor').call<Map<String, dynamic>>({'uid': widget.uid});
+      await _functions
+          .httpsCallable('aprobarConductor')
+          .call<Map<String, dynamic>>({'uid': widget.uid});
     } catch (e) {
       setState(() => _error = 'No se pudo aprobar: $e');
     } finally {
@@ -87,10 +91,9 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
       _error = null;
     });
     try {
-      await _functions.httpsCallable('activarDesactivarCuenta').call<Map<String, dynamic>>({
-        'uid': widget.uid,
-        'activo': activo,
-      });
+      await _functions
+          .httpsCallable('activarDesactivarCuenta')
+          .call<Map<String, dynamic>>({'uid': widget.uid, 'activo': activo});
     } catch (e) {
       setState(() => _error = 'No se pudo actualizar: $e');
     } finally {
@@ -102,7 +105,11 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
   Widget build(BuildContext context) {
     final nombre = (widget.datos['nombre'] as String?) ?? '(sin nombre)';
     final aprobado = widget.datos['aprobado'] as bool? ?? false;
-    final activo = widget.datos['activo'] as bool? ?? true;
+    final activo = widget.datos['activo'] as bool? ?? false;
+    final operacion = widget.datos['operacionCuenta'] as Map<String, dynamic>?;
+    final pendiente = operacion != null;
+    final reintentar = operacion?['estado'] == 'reintentar';
+    final accionActivo = pendiente ? operacion['accion'] == 'activar' : !activo;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -114,14 +121,29 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
             Row(
               children: [
                 Expanded(
-                  child: Text(nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  child: Text(
+                    nombre,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 if (!aprobado)
-                  const Chip(label: Text('Pendiente de aprobación'), backgroundColor: Color(0xFFFFF3CD))
+                  const Chip(
+                    label: Text('Pendiente de aprobación'),
+                    backgroundColor: Color(0xFFFFF3CD),
+                  )
                 else if (!activo)
-                  const Chip(label: Text('Desactivado'), backgroundColor: Color(0xFFFFE0E0))
+                  const Chip(
+                    label: Text('Desactivado'),
+                    backgroundColor: Color(0xFFFFE0E0),
+                  )
                 else
-                  const Chip(label: Text('Activo'), backgroundColor: Color(0xFFE0F5E0)),
+                  const Chip(
+                    label: Text('Activo'),
+                    backgroundColor: Color(0xFFE0F5E0),
+                  ),
               ],
             ),
             _buildDatosVehiculo(),
@@ -133,7 +155,7 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
               ),
             Row(
               children: [
-                if (!aprobado)
+                if (!aprobado && !pendiente)
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _procesando ? null : _aprobar,
@@ -144,9 +166,21 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
                 else
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _procesando ? null : () => _cambiarActivo(!activo),
+                      onPressed:
+                          _procesando ||
+                              (pendiente &&
+                                  (!reintentar ||
+                                      operacion['accion'] == 'eliminar'))
+                          ? null
+                          : () => _cambiarActivo(accionActivo),
                       icon: Icon(activo ? Icons.block : Icons.restart_alt),
-                      label: Text(activo ? 'Desactivar' : 'Reactivar'),
+                      label: Text(
+                        pendiente
+                            ? (reintentar
+                                  ? 'Reintentar operación'
+                                  : 'Operación en curso')
+                            : (activo ? 'Desactivar' : 'Reactivar'),
+                      ),
                     ),
                   ),
               ],
@@ -159,12 +193,18 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
 
   Widget _buildDatosVehiculo() {
     return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      future: FirebaseFirestore.instance.collection('choferes_privado').doc(widget.uid).get(),
+      future: FirebaseFirestore.instance
+          .collection('choferes_privado')
+          .doc(widget.uid)
+          .get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return const Padding(
             padding: EdgeInsets.only(top: 4),
-            child: Text('Aún no completó sus datos de vehículo.', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              'Aún no completó sus datos de vehículo.',
+              style: TextStyle(color: Colors.grey),
+            ),
           );
         }
         final datos = snapshot.data!.data()!;
@@ -179,7 +219,10 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
             children: [
               Text('Patente: $patente · Vehículo: $modelo'),
               if (adaptado)
-                const Text('Vehículo adaptado para movilidad reducida', style: TextStyle(color: Colors.blue)),
+                const Text(
+                  'Vehículo adaptado para movilidad reducida',
+                  style: TextStyle(color: Colors.blue),
+                ),
             ],
           ),
         );
