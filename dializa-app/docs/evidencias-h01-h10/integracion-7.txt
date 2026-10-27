@@ -1,0 +1,61 @@
+!  emulators: You are not currently authenticated so some features may not work correctly. Please run firebase login to authenticate the CLI.
+i  emulators: Starting emulators: auth, firestore, database
+i  emulators: Detected demo project ID "demo-dializa-h10", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
++  firestore: Firestore Emulator UI websocket is running on 9150.
+i  database: Database Emulator logging to database-debug.log
+i  Running script: node --test integration/regresiones.test.js
+TAP version 13
+# Subtest: H01/H08: instancia obsoleta falla; GPS aceptado se conserva al finalizar
+ok 1 - H01/H08: instancia obsoleta falla; GPS aceptado se conserva al finalizar
+  ---
+  duration_ms: 8361.9703
+  ...
+# Subtest: H04: transacciones reales impiden desactivacion cruzada de todos los admins
+ok 2 - H04: transacciones reales impiden desactivacion cruzada de todos los admins
+  ---
+  duration_ms: 3187.0191
+  ...
+# Subtest: H05: registros simultaneos conservan un propietario real del token
+ok 3 - H05: registros simultaneos conservan un propietario real del token
+  ---
+  duration_ms: 3616.7444
+  ...
+# Subtest: H06: baja generica archiva, borra Auth y revoca ubicacion
+ok 4 - H06: baja generica archiva, borra Auth y revoca ubicacion
+  ---
+  duration_ms: 826.2673
+  ...
+# Subtest: H07: baja no convierte una solicitud en_viaje a cancelado
+ok 5 - H07: baja no convierte una solicitud en_viaje a cancelado
+  ---
+  duration_ms: 288.6796
+  ...
+# Subtest: H02: fencing real rechaza un escritor demorado despues de revocar
+ok 6 - H02: fencing real rechaza un escritor demorado despues de revocar
+  ---
+  duration_ms: 287.1249
+  ...
+# Subtest: H03: registro no reactiva conductor deshabilitado en Auth real
+ok 7 - H03: registro no reactiva conductor deshabilitado en Auth real
+  ---
+  duration_ms: 481.7981
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19495.9666
++  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  database: Stopping Database Emulator
+!  Database Emulator has exited upon receiving signal: SIGINT
+i  firestore: Stopping Firestore Emulator
+!  Firestore Emulator has exited upon receiving signal: SIGINT
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

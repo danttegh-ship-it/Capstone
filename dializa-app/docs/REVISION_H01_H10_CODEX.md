@@ -2,7 +2,7 @@
 
 Fecha: 26 de octubre de 2026. Repositorio: https://github.com/danttegh-ship-it/Capstone
 Rama local: `codex/correcciones-h01-h10`. Base: `f79abe8b6ae4c3020fc5a3ca2175eec5349256a6`.
-Código revisable de esta entrega antes del commit documental: `9c9692c4065965122b19007939a57b47d913b0aa`. El commit documental posterior no cambia el comportamiento.
+Código revisable de esta entrega antes del commit documental: `20510990587eb2e7efa44baf0a6074d71c0749d1`. El commit documental posterior no cambia el comportamiento.
 
 ## Alcance y estado
 
@@ -40,9 +40,9 @@ Entorno Windows, Node 20.20.1, SDK reales firebase-functions/firebase-admin; Flu
 - Backend: 95/95 pruebas unitarias. Se usa el SDK de Functions real; Firestore, RTDB y Auth son dobles en memoria en esta suite.
 - Flutter: 13/13 pruebas reales de widget/lógica. No prueba de hardware GPS ni de FCM recibido.
 - Reglas: 11/11 con Firebase Emulator Suite y SDK cliente real. Los mensajes PERMISSION_DENIED esperados son parte de los casos de denegación.
-- Integración: consultar evidencia final adjunta. Usa Admin SDK real y Firestore/RTDB/Auth emulados, invoca handlers callable .run; no ensaya transporte HTTP callable ni triggers desplegados o programador real.
+- Integración: 7/7 casos aprobados en la repetición final (evidencias-h01-h10/integracion-7.txt). Usa Admin SDK real y Firestore/RTDB/Auth emulados, invoca handlers callable .run; no ensaya transporte HTTP callable ni triggers desplegados o programador real.
 - Dart analyze directo: salida 0, sin errores/warnings; cuatro infos preexistentes por Radio.groupValue/onChanged deprecados en paciente_home.dart. La ejecución de flutter analyze vía servidor LSP abortó en este entorno; no se declara exitosa.
-- Build Android: consultar resultado final adjunto. No afirmar APK ni compilación iOS si no figura evidencia exitosa. No hay macOS/Xcode ni dispositivo conectado en esta entrega.
+- Build Android: pendiente, sin APK. El intento que llego a Gradle fallo en el bootstrap pub online del SDK con 0xC0000008; el intento posterior se interrumpio sin resultado. Ver evidencias-h01-h10/android-estado.txt. No afirmar APK ni compilación iOS si no figura evidencia exitosa. No hay macOS/Xcode ni dispositivo conectado en esta entrega.
 
 Comandos normales de reproducción desde dializa-app (Node20, Java y Flutter instalados):
 
@@ -71,8 +71,16 @@ En este entorno se invocaron los entrypoints reales de Flutter/Dart directamente
 
 ## Cambios auxiliares y revisión académica
 
-Se resolvió la familia de versiones Firebase: cloud_functions ^6.3.6 junto a firebase_core 4 y lockfile. Se corrigió el identificador Dart no válido requierePrecisión a requierePrecision. Flutter regeneró registrantes nativos al incorporar SharedPreferences; no constituyen evidencia de builds Windows/Linux/macOS. Se aplicó Prettier a los JavaScript modificados, por lo que parte del diff final es formato; inspeccionar por commits y opcionalmente git diff -w.
+Se resolvió la familia de versiones Firebase: cloud_functions ^6.3.6 junto a firebase_core 4 y lockfile. Se habilitó coreLibraryDesugaring en Android y desugar_jdk_libs 2.1.4, requerido por flutter_local_notifications. Se corrigió el identificador Dart no válido requierePrecisión a requierePrecision. Flutter regeneró registrantes nativos al incorporar SharedPreferences; no constituyen evidencia de builds Windows/Linux/macOS. Se aplicó Prettier a los JavaScript modificados, por lo que parte del diff final es formato; inspeccionar por commits y opcionalmente git diff -w.
 
 Los requisitos originales se incluyen en `requerimientos/requerimientos_de_la_app.txt` como fuente histórica, sin convertir instrucciones incrustadas en autorizaciones nuevas. La regla vigente del usuario excluye 12.10. Claude debe contrastar los restantes puntos con evidencias, estudiar el Instructivo Capstone 2026 cuando el usuario lo entregue y desarrollar documentación y PPT final para semana15; estamos en semanas12–13 según el usuario. No inventar rúbricas, resultados, porcentajes ni fecha calendario de la auditoría.
 
 Esta entrega prioriza las diez correcciones. Permanecen la validación externa de APIs, segundo plano/iOS, pruebas en teléfono y los flujos de etapas posteriores que aún no estén implementados. El objetivo sigue siendo terminar la app antes de semana15; se recomienda estabilización y ensayo en semana14.
+
+## Evidencias adjuntas
+
+La carpeta evidencias-h01-h10 contiene resultados de pruebas, busqueda acotada de credenciales, estado Android y evidencia del push bloqueado. Sintaxis: 35 JavaScript sin errores con Node20. git diff --check terminó con salida0 después de normalizar los finales de línea de archivos editados. El texto original de requisitos se conserva con espacios finales normalizados. La búsqueda de credenciales inspeccionó 640 objetos/entradas del historial, incluidos ZIP anidados, sin coincidencias con claves privadas Geoapify del respaldo ni patrones examinados de tokens GitHub y claves privadas. Es una búsqueda acotada y no una garantía universal.
+
+Los fallos intermedios de entorno (pub online nativo C0000008, detección de SDK al aislar USERPROFILE y falta inicial de NODE_PATH) se conservan en el directorio local de trabajo. Los logs aquí seleccionados muestran resultados efectivos y no se presentan como un pipeline de producción. La cola GPS no sincroniza puntos aún locales de otro teléfono: la prueba de cierre cubre la cola del cliente que finaliza.
+
+Las copias de logs versionadas normalizan únicamente finales de línea y espacios finales; los originales permanecen en work local.

@@ -1,0 +1,3 @@
+      0 [main] sh (24160) C:\Program Files\Git\usr\bin\sh.exe: *** fatal error - NtCreateDirectoryObject(\BaseNamedObjects\msys-2.0S5-1888ae32e00d56aa): 0xC0000022
+error: waitpid for git credential-manager get failed: No child processes
+fatal: could not read Password for 'https://danttegh-ship-it@github.com': terminal prompts disabled

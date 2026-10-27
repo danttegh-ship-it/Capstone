@@ -1,0 +1,507 @@
+TAP version 13
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: elegirAutorizado (puro): estados que autorizan en cada coleccion y prioridad
+ok 1 - elegirAutorizado (puro): estados que autorizan en cada coleccion y prioridad
+  ---
+  duration_ms: 6.8306
+  ...
+# Subtest: A: aceptar una solicitud concede la lectura al paciente; cancelar la revoca y conserva la version
+ok 2 - A: aceptar una solicitud concede la lectura al paciente; cancelar la revoca y conserva la version
+  ---
+  duration_ms: 122.9843
+  ...
+# Subtest: A: rechazar una solicitud ya aceptada revoca al paciente
+ok 3 - A: rechazar una solicitud ya aceptada revoca al paciente
+  ---
+  duration_ms: 13.3245
+  ...
+# Subtest: A: viaje asignado por admin NO autoriza; conductor_en_camino SI; finalizar revoca
+ok 4 - A: viaje asignado por admin NO autoriza; conductor_en_camino SI; finalizar revoca
+  ---
+  duration_ms: 53.4863
+  ...
+# Subtest: A: un paciente anterior NO conserva acceso cuando el chofer pasa a otro paciente
+ok 5 - A: un paciente anterior NO conserva acceso cuando el chofer pasa a otro paciente
+  ---
+  duration_ms: 23.0399
+  ...
+# Subtest: A: reasignar el viaje a otro chofer revoca al chofer anterior y no concede de antemano al nuevo
+ok 6 - A: reasignar el viaje a otro chofer revoca al chofer anterior y no concede de antemano al nuevo
+  ---
+  duration_ms: 28.6256
+  ...
+# Subtest: H02: con reloj empatado un escritor atrasado no revive un permiso revocado
+ok 7 - H02: con reloj empatado un escritor atrasado no revive un permiso revocado
+  ---
+  duration_ms: 20.1227
+  ...
+# Subtest: A: el update() de lat/lng/timestamp del chofer NO borra pacienteAutorizado (set() si lo borraria)
+ok 8 - A: el update() de lat/lng/timestamp del chofer NO borra pacienteAutorizado (set() si lo borraria)
+  ---
+  duration_ms: 6.2237
+  ...
+# No se pudo reconciliar la autorizacion de ubicacion de chofer_uid_001: Error: RTDB no disponible (simulado)
+#     at FakeRtdbRef._chequeo (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:285:33)
+#     at FakeRtdbRef.get (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:288:10)
+#     at FakeRtdbRef.once (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:282:17)
+#     at conVistaViva (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:97:15)
+#     at reconciliar (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:108:12)
+#     at Object.reconciliarSeguro (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:207:21)
+#     at C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\viajes.js:393:57
+#     at async TestContext.<anonymous> (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\autorizacion.test.js:272:13)
+#     at async Test.run (node:internal/test_runner/test:797:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+# Subtest: A: si RTDB falla, la operacion de negocio SE CONFIRMA y se informa autorizacionSincronizada:false; el admin puede reparar
+ok 9 - A: si RTDB falla, la operacion de negocio SE CONFIRMA y se informa autorizacionSincronizada:false; el admin puede reparar
+  ---
+  duration_ms: 48.5397
+  ...
+# Subtest: A: sincronizarAutorizacionUbicacion -- un chofer solo repara la suya; un paciente no puede
+ok 10 - A: sincronizarAutorizacionUbicacion -- un chofer solo repara la suya; un paciente no puede
+  ---
+  duration_ms: 9.7556
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: H03: registro y aprobacion no reactivan cuentas deshabilitadas
+ok 11 - H03: registro y aprobacion no reactivan cuentas deshabilitadas
+  ---
+  duration_ms: 334.3272
+  ...
+# Subtest: H04: desactivacion cruzada conserva al menos un admin operativo
+ok 12 - H04: desactivacion cruzada conserva al menos un admin operativo
+  ---
+  duration_ms: 17.6393
+  ...
+# Subtest: H04: bajas cruzadas conservan un administrador
+ok 13 - H04: bajas cruzadas conservan un administrador
+  ---
+  duration_ms: 17.544
+  ...
+# Subtest: H06: baja generica de paciente archiva y revoca como baja especifica
+ok 14 - H06: baja generica de paciente archiva y revoca como baja especifica
+  ---
+  duration_ms: 14.0137
+  ...
+# Subtest: H07: eliminarCuenta rechaza baja en_viaje viajes sin mutar
+ok 15 - H07: eliminarCuenta rechaza baja en_viaje viajes sin mutar
+  ---
+  duration_ms: 2.6115
+  ...
+# Subtest: H07: eliminarCuenta rechaza baja en_viaje solicitudes sin mutar
+ok 16 - H07: eliminarCuenta rechaza baja en_viaje solicitudes sin mutar
+  ---
+  duration_ms: 3.6459
+  ...
+# Subtest: H07: eliminarPaciente rechaza baja en_viaje viajes sin mutar
+ok 17 - H07: eliminarPaciente rechaza baja en_viaje viajes sin mutar
+  ---
+  duration_ms: 2.9099
+  ...
+# Subtest: H07: eliminarPaciente rechaza baja en_viaje solicitudes sin mutar
+ok 18 - H07: eliminarPaciente rechaza baja en_viaje solicitudes sin mutar
+  ---
+  duration_ms: 6.4106
+  ...
+# Subtest: H06/H07: fallo parcial de Auth deja baja bloqueada y reintentable
+ok 19 - H06/H07: fallo parcial de Auth deja baja bloqueada y reintentable
+  ---
+  duration_ms: 103.1647
+  ...
+# Subtest: H03: activar perfil sin credencial Auth no informa exito ni lo habilita
+ok 20 - H03: activar perfil sin credencial Auth no informa exito ni lo habilita
+  ---
+  duration_ms: 11.5271
+  ...
+# Subtest: H03: un segundo ejecutor no entra mientras Auth esta pendiente
+ok 21 - H03: un segundo ejecutor no entra mientras Auth esta pendiente
+  ---
+  duration_ms: 6.7827
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: D: desactivar -> Firestore activo:false, Auth disabled:true y refresh tokens revocados
+ok 22 - D: desactivar -> Firestore activo:false, Auth disabled:true y refresh tokens revocados
+  ---
+  duration_ms: 434.3106
+  ...
+# Subtest: D: reactivar -> Auth habilitado y Firestore activo:true
+ok 23 - D: reactivar -> Auth habilitado y Firestore activo:true
+  ---
+  duration_ms: 9.1111
+  ...
+# Subtest: D: una cuenta desactivada queda bloqueada de inmediato en las Cloud Functions (aunque su token siga vigente)
+ok 24 - D: una cuenta desactivada queda bloqueada de inmediato en las Cloud Functions (aunque su token siga vigente)
+  ---
+  duration_ms: 7.9401
+  ...
+# Subtest: D: idempotente -- repetir la misma desactivacion no falla ni duplica efectos relevantes
+ok 25 - D: idempotente -- repetir la misma desactivacion no falla ni duplica efectos relevantes
+  ---
+  duration_ms: 102.146
+  ...
+# Subtest: D: si el usuario existe solo en Firestore (sin Auth) se desactiva igual y se informa authActualizado:false
+ok 26 - D: si el usuario existe solo en Firestore (sin Auth) se desactiva igual y se informa authActualizado:false
+  ---
+  duration_ms: 55.682
+  ...
+# Subtest: D: si Auth falla al desactivar, Firestore ya quedo en false (lado seguro) y el error se propaga para reintentar
+ok 27 - D: si Auth falla al desactivar, Firestore ya quedo en false (lado seguro) y el error se propaga para reintentar
+  ---
+  duration_ms: 7.7451
+  ...
+# Subtest: D: protecciones previas se mantienen (no auto-desactivarse, ni al ultimo admin)
+ok 28 - D: protecciones previas se mantienen (no auto-desactivarse, ni al ultimo admin)
+  ---
+  duration_ms: 7.8333
+  ...
+# Subtest: D: solo un admin puede desactivar
+ok 29 - D: solo un admin puede desactivar
+  ---
+  duration_ms: 3.143
+  ...
+# Subtest: E: registrarTokenFcm guarda el token y lo LIMPIA de otra cuenta que lo tuviera (cambio de usuario en el mismo telefono)
+ok 30 - E: registrarTokenFcm guarda el token y lo LIMPIA de otra cuenta que lo tuviera (cambio de usuario en el mismo telefono)
+  ---
+  duration_ms: 14.6869
+  ...
+# Subtest: E: registrarTokenFcm valida el token y exige sesion
+ok 31 - E: registrarTokenFcm valida el token y exige sesion
+  ---
+  duration_ms: 12.2098
+  ...
+# Subtest: E: eliminarTokenFcm borra el token propio, y no toca el de otro dispositivo si el token no coincide
+ok 32 - E: eliminarTokenFcm borra el token propio, y no toca el de otro dispositivo si el token no coincide
+  ---
+  duration_ms: 5.4465
+  ...
+# Subtest: eliminarCuenta de un chofer con viajes sin cerrar es RECHAZADA; con viajes cerrados procede
+ok 33 - eliminarCuenta de un chofer con viajes sin cerrar es RECHAZADA; con viajes cerrados procede
+  ---
+  duration_ms: 17.9389
+  ...
+# Subtest: eliminarPaciente archiva su viaje vigente (cuenta_eliminada), cancela solicitudes abiertas y revoca la ubicacion
+ok 34 - eliminarPaciente archiva su viaje vigente (cuenta_eliminada), cancela solicitudes abiertas y revoca la ubicacion
+  ---
+  duration_ms: 9.6292
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: H05: dos cuentas concurrentes conservan un solo propietario privado del token
+ok 35 - H05: dos cuentas concurrentes conservan un solo propietario privado del token
+  ---
+  duration_ms: 157.8591
+  ...
+# Subtest: H05: logout adelantado impide registro tardio de la sesion cerrada
+ok 36 - H05: logout adelantado impide registro tardio de la sesion cerrada
+  ---
+  duration_ms: 6.7303
+  ...
+# Subtest: H05: logout de otra sesion no elimina token de la sesion nueva
+ok 37 - H05: logout de otra sesion no elimina token de la sesion nueva
+  ---
+  duration_ms: 3.5353
+  ...
+# Subtest: H05: sesion sustituida no recupera un token transferido a otra cuenta
+ok 38 - H05: sesion sustituida no recupera un token transferido a otra cuenta
+  ---
+  duration_ms: 5.4425
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: GPS: guarda muestras en la subcoleccion (no en el documento), con fase y fuente, y actualiza el resumen
+ok 39 - GPS: guarda muestras en la subcoleccion (no en el documento), con fase y fuente, y actualiza el resumen
+  ---
+  duration_ms: 155.979
+  ...
+# Subtest: GPS: reenviar el mismo lote es idempotente (sin duplicados ni conteo inflado)
+ok 40 - GPS: reenviar el mismo lote es idempotente (sin duplicados ni conteo inflado)
+  ---
+  duration_ms: 12.8571
+  ...
+# Subtest: GPS: dos lotes concurrentes con muestras distintas suman bien el conteo
+ok 41 - GPS: dos lotes concurrentes con muestras distintas suman bien el conteo
+  ---
+  duration_ms: 13.2669
+  ...
+# Subtest: GPS: un chofer AJENO no puede registrar muestras en un viaje que no es suyo
+ok 42 - GPS: un chofer AJENO no puede registrar muestras en un viaje que no es suyo
+  ---
+  duration_ms: 66.8103
+  ...
+# Subtest: GPS: roles distintos de chofer (paciente, admin) son rechazados
+ok 43 - GPS: roles distintos de chofer (paciente, admin) son rechazados
+  ---
+  duration_ms: 63.0674
+  ...
+# Subtest: GPS: en estado 'asignado' (aun no sale) no se registran muestras
+ok 44 - GPS: en estado 'asignado' (aun no sale) no se registran muestras
+  ---
+  duration_ms: 5.5727
+  ...
+# Subtest: GPS: despues de finalizar NO se aceptan muestras (viaje cerrado)
+ok 45 - GPS: despues de finalizar NO se aceptan muestras (viaje cerrado)
+  ---
+  duration_ms: 22.7012
+  ...
+# Subtest: GPS: carrera con el cierre -- finalizar y registrar a la vez: las muestras aceptadas quedan contadas en el archivo o se rechazan, nunca despues
+ok 46 - GPS: carrera con el cierre -- finalizar y registrar a la vez: las muestras aceptadas quedan contadas en el archivo o se rechazan, nunca despues
+  ---
+  duration_ms: 13.8988
+  ...
+# Subtest: GPS: coordenadas invalidas, timestamps fuera de ventana, lotes vacios o gigantes se rechazan completos
+ok 47 - GPS: coordenadas invalidas, timestamps fuera de ventana, lotes vacios o gigantes se rechazan completos
+  ---
+  duration_ms: 27.7589
+  ...
+# Subtest: GPS: tope de 5000 muestras por viaje
+ok 48 - GPS: tope de 5000 muestras por viaje
+  ---
+  duration_ms: 9.7163
+  ...
+# Subtest: GPS: limite de frecuencia por chofer (30 llamadas/minuto)
+ok 49 - GPS: limite de frecuencia por chofer (30 llamadas/minuto)
+  ---
+  duration_ms: 130.1649
+  ...
+# Subtest: GPS: tambien funciona en solicitudes bajo demanda
+ok 50 - GPS: tambien funciona en solicitudes bajo demanda
+  ---
+  duration_ms: 4.7279
+  ...
+# Subtest: H08: lote offline de la misma instancia se conserva hasta ocho horas
+ok 51 - H08: lote offline de la misma instancia se conserva hasta ocho horas
+  ---
+  duration_ms: 21.884
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: H01: orden y GPS pendientes no afectan una nueva asignacion del mismo chofer
+ok 52 - H01: orden y GPS pendientes no afectan una nueva asignacion del mismo chofer
+  ---
+  duration_ms: 220.7247
+  ...
+# Subtest: H01: instancia ausente y estado esperado obsoleto son rechazados
+ok 53 - H01: instancia ausente y estado esperado obsoleto son rechazados
+  ---
+  duration_ms: 8.1353
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: rolPorPrefijo: admin.* -> admin, conductor.* -> chofer, resto -> paciente
+ok 54 - rolPorPrefijo: admin.* -> admin, conductor.* -> chofer, resto -> paciente
+  ---
+  duration_ms: 4.1344
+  ...
+# Subtest: cuentas por defecto: admin.ejemplo@gmail.com y conductor.ejemplo@gmail.com
+ok 55 - cuentas por defecto: admin.ejemplo@gmail.com y conductor.ejemplo@gmail.com
+  ---
+  duration_ms: 1.7644
+  ...
+# Subtest: planificar: crea las nuevas, omite las existentes, descarta invalidas y duplicadas
+ok 56 - planificar: crea las nuevas, omite las existentes, descarta invalidas y duplicadas
+  ---
+  duration_ms: 0.7547
+  ...
+# Subtest: ejecutarPlan: crea cuentas con perfil + custom claim coherentes; el chofer nace NO aprobado por defecto
+ok 57 - ejecutarPlan: crea cuentas con perfil + custom claim coherentes; el chofer nace NO aprobado por defecto
+  ---
+  duration_ms: 78.9065
+  ...
+# Subtest: ejecutarPlan: con aprobarConductores=true el chofer NUEVO nace aprobado (solo cuentas de prueba)
+ok 58 - ejecutarPlan: con aprobarConductores=true el chofer NUEVO nace aprobado (solo cuentas de prueba)
+  ---
+  duration_ms: 18.8228
+  ...
+# Subtest: ejecutarPlan: NUNCA cambia ni promueve cuentas existentes (rol, claims, perfil, contrasena)
+ok 59 - ejecutarPlan: NUNCA cambia ni promueve cuentas existentes (rol, claims, perfil, contrasena)
+  ---
+  duration_ms: 4.76
+  ...
+# Subtest: ejecutarPlan: si falla Firestore tras crear el usuario en Auth, se deshace (no quedan cuentas sin perfil)
+ok 60 - ejecutarPlan: si falla Firestore tras crear el usuario en Auth, se deshace (no quedan cuentas sin perfil)
+  ---
+  duration_ms: 2.2064
+  ...
+# Subtest: ejecutarPlan: rechaza contrasenas debiles y NUNCA expone la contrasena en resultados ni llamadas registradas
+ok 61 - ejecutarPlan: rechaza contrasenas debiles y NUNCA expone la contrasena en resultados ni llamadas registradas
+  ---
+  duration_ms: 7.5377
+  ...
+# Subtest: no existe ningun endpoint publico que otorgue roles por prefijo (el prefijo solo se usa en scripts/seed-lib.js)
+ok 62 - no existe ningun endpoint publico que otorgue roles por prefijo (el prefijo solo se usa en scripts/seed-lib.js)
+  ---
+  duration_ms: 28.4954
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: validarFecha: calendario real YYYY-MM-DD
+ok 63 - validarFecha: calendario real YYYY-MM-DD
+  ---
+  duration_ms: 3.5845
+  ...
+# Subtest: validarHora: HH:mm 24h
+ok 64 - validarHora: HH:mm 24h
+  ---
+  duration_ms: 4.0169
+  ...
+# Subtest: validarMuestrasGps: ordena, deduplica por timestamp y rechaza lotes invalidos completos
+ok 65 - validarMuestrasGps: ordena, deduplica por timestamp y rechaza lotes invalidos completos
+  ---
+  duration_ms: 3.4588
+  ...
+# Subtest: validarPuntoViaje / validarNecesidades / validarTextoOpcional
+ok 66 - validarPuntoViaje / validarNecesidades / validarTextoOpcional
+  ---
+  duration_ms: 1.9151
+  ...
+# Subtest: el flag RESTRICCION_GEOGRAFICA_CHILE_ACTIVA (apagado por defecto) tambien rige origen/destino y GPS
+ok 67 - el flag RESTRICCION_GEOGRAFICA_CHILE_ACTIVA (apagado por defecto) tambien rige origen/destino y GPS
+  ---
+  duration_ms: 1.4258
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# 38 pasados, 0 fallidos de 38 tests.
+# Subtest: C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\validaciones.test.js
+ok 9 - C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\validaciones.test.js
+  ---
+  duration_ms: 2133.2248
+  ...
+# \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
+# Subtest: B: crearSolicitudViaje persiste origen, destino y necesidades validados (y conserva notas/direccionTexto)
+ok 69 - B: crearSolicitudViaje persiste origen, destino y necesidades validados (y conserva notas/direccionTexto)
+  ---
+  duration_ms: 246.2434
+  ...
+# Subtest: B: rechaza origen/destino ausentes, coordenadas invalidas y textos demasiado largos
+ok 70 - B: rechaza origen/destino ausentes, coordenadas invalidas y textos demasiado largos
+  ---
+  duration_ms: 9.2005
+  ...
+# Subtest: B: rate limit -- la segunda creacion inmediata es rechazada; otro paciente no se ve afectado
+ok 71 - B: rate limit -- la segunda creacion inmediata es rechazada; otro paciente no se ve afectado
+  ---
+  duration_ms: 7.1309
+  ...
+# Subtest: B: solo un paciente activo puede crear solicitudes
+ok 72 - B: solo un paciente activo puede crear solicitudes
+  ---
+  duration_ms: 40.9295
+  ...
+# Subtest: C: cancelar desde 'asignado' en viajes es valido, archiva y deja al chofer no disponible
+ok 73 - C: cancelar desde 'asignado' en viajes es valido, archiva y deja al chofer no disponible
+  ---
+  duration_ms: 111.085
+  ...
+# Subtest: C: cancelar desde 'asignado' en solicitudes es valido, archiva y deja al chofer no disponible
+ok 74 - C: cancelar desde 'asignado' en solicitudes es valido, archiva y deja al chofer no disponible
+  ---
+  duration_ms: 7.7672
+  ...
+# Subtest: C: cancelar desde 'conductor_en_camino' en viajes es valido, archiva y deja al chofer no disponible
+ok 75 - C: cancelar desde 'conductor_en_camino' en viajes es valido, archiva y deja al chofer no disponible
+  ---
+  duration_ms: 5.4814
+  ...
+# Subtest: C: cancelar desde 'conductor_en_camino' en solicitudes es valido, archiva y deja al chofer no disponible
+ok 76 - C: cancelar desde 'conductor_en_camino' en solicitudes es valido, archiva y deja al chofer no disponible
+  ---
+  duration_ms: 13.9648
+  ...
+# Subtest: C: cancelar desde 'conductor_llego' en viajes es valido, archiva y deja al chofer no disponible
+ok 77 - C: cancelar desde 'conductor_llego' en viajes es valido, archiva y deja al chofer no disponible
+  ---
+  duration_ms: 7.2649
+  ...
+# Subtest: C: cancelar desde 'conductor_llego' en solicitudes es valido, archiva y deja al chofer no disponible
+ok 78 - C: cancelar desde 'conductor_llego' en solicitudes es valido, archiva y deja al chofer no disponible
+  ---
+  duration_ms: 48.9296
+  ...
+# Subtest: C: cancelar desde 'en_viaje' es RECHAZADO por el servidor y no cambia nada
+ok 79 - C: cancelar desde 'en_viaje' es RECHAZADO por el servidor y no cambia nada
+  ---
+  duration_ms: 6.0719
+  ...
+# Subtest: C: cancelar desde 'finalizado' es RECHAZADO por el servidor y no cambia nada
+ok 80 - C: cancelar desde 'finalizado' es RECHAZADO por el servidor y no cambia nada
+  ---
+  duration_ms: 6.845
+  ...
+# Subtest: C: cancelar desde 'cancelado' es RECHAZADO por el servidor y no cambia nada
+ok 81 - C: cancelar desde 'cancelado' es RECHAZADO por el servidor y no cambia nada
+  ---
+  duration_ms: 64.9382
+  ...
+# Subtest: C: un chofer ajeno no puede cancelar
+ok 82 - C: un chofer ajeno no puede cancelar
+  ---
+  duration_ms: 4.5434
+  ...
+# Subtest: C: dos cancelaciones concurrentes -- una gana, la otra falla, un solo archivo
+ok 83 - C: dos cancelaciones concurrentes -- una gana, la otra falla, un solo archivo
+  ---
+  duration_ms: 11.4047
+  ...
+# Subtest: actualizarEstadoViaje: transiciones validas e invalidas
+ok 84 - actualizarEstadoViaje: transiciones validas e invalidas
+  ---
+  duration_ms: 250.9332
+  ...
+# Subtest: rechazarSolicitud: solo para quien YA acepto (asignado); una pendiente NO se puede rechazar
+ok 85 - rechazarSolicitud: solo para quien YA acepto (asignado); una pendiente NO se puede rechazar
+  ---
+  duration_ms: 9.3554
+  ...
+# Subtest: aceptarSolicitud: dos choferes a la vez -- solo uno la obtiene
+ok 86 - aceptarSolicitud: dos choferes a la vez -- solo uno la obtiene
+  ---
+  duration_ms: 4.5372
+  ...
+# Subtest: historial: finalizar archiva con nombres, estados y resumen GPS; el viaje vivo se conserva
+ok 87 - historial: finalizar archiva con nombres, estados y resumen GPS; el viaje vivo se conserva
+  ---
+  duration_ms: 4.9997
+  ...
+# Subtest: historial: archivar es IDEMPOTENTE -- un segundo intento no duplica ni pisa el original
+ok 88 - historial: archivar es IDEMPOTENTE -- un segundo intento no duplica ni pisa el original
+  ---
+  duration_ms: 6.9909
+  ...
+# Subtest: historial: viaje legado (sin viajeId ni estado) se archiva con id determinista y esLegacy
+ok 89 - historial: viaje legado (sin viajeId ni estado) se archiva con id determinista y esLegacy
+  ---
+  duration_ms: 6.043
+  ...
+# Subtest: asignarViaje: crea el viaje con viajeId generado, nombres resueltos en servidor y sin archivo previo
+ok 90 - asignarViaje: crea el viaje con viajeId generado, nombres resueltos en servidor y sin archivo previo
+  ---
+  duration_ms: 7.7867
+  ...
+# Subtest: asignarViaje: reasignar ARCHIVA el viaje anterior (no se pierde) y crea uno nuevo con otro viajeId
+ok 91 - asignarViaje: reasignar ARCHIVA el viaje anterior (no se pierde) y crea uno nuevo con otro viajeId
+  ---
+  duration_ms: 6.7689
+  ...
+# Subtest: asignarViaje: tras finalizar, el nuevo .set no pierde nada (el finalizado ya estaba archivado)
+ok 92 - asignarViaje: tras finalizar, el nuevo .set no pierde nada (el finalizado ya estaba archivado)
+  ---
+  duration_ms: 67.78
+  ...
+# Subtest: asignarViaje: un viaje en curso (conductor_llego / en_viaje) NO se puede reasignar
+ok 93 - asignarViaje: un viaje en curso (conductor_llego / en_viaje) NO se puede reasignar
+  ---
+  duration_ms: 3.7399
+  ...
+# Subtest: asignarViaje: dos asignaciones concurrentes -- ninguna se pierde, queda una vigente y la otra archivada
+ok 94 - asignarViaje: dos asignaciones concurrentes -- ninguna se pierde, queda una vigente y la otra archivada
+  ---
+  duration_ms: 39.5367
+  ...
+# Subtest: asignarViaje: validaciones y permisos
+ok 95 - asignarViaje: validaciones y permisos
+  ---
+  duration_ms: 9.3388
+  ...
+1..95
+# tests 95
+# suites 0
+# pass 95
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3230.012

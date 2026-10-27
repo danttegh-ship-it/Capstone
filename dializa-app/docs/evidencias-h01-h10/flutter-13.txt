@@ -1,0 +1,15 @@
+00:00 +0: loading C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart
+00:00 +0: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: H08 fallo de envio conserva lote y reintento es idempotente por timestamp
+00:00 +1: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: H01/H08 nueva asignacion no absorbe puntos de la instancia anterior
+00:03 +2: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/fcm_session_controller_test.dart: H05 getToken tardio no registra una cuenta anterior
+00:03 +3: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/fcm_session_controller_test.dart: H05 cierre espera registro y revoca antes de borrar token
+00:03 +4: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/fcm_session_controller_test.dart: H05 cierre concurrente invalida token aunque falle la revocacion
+00:05 +5: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:07 +6: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/widget_test.dart: LoginScreen muestra el titulo, los campos y el boton de ingresar
+00:07 +7: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/widget_test.dart: LoginScreen muestra el titulo, los campos y el boton de ingresar
+00:07 +8: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/widget_test.dart: LoginScreen muestra el titulo, los campos y el boton de ingresar
+00:07 +9: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/widget_test.dart: LoginScreen muestra el titulo, los campos y el boton de ingresar
+00:07 +10: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/widget_test.dart: LoginScreen muestra el titulo, los campos y el boton de ingresar
+00:07 +11: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/widget_test.dart: LoginScreen muestra el titulo, los campos y el boton de ingresar
+00:07 +12: C:/Users/maver/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/widget_test.dart: LoginScreen muestra el titulo, los campos y el boton de ingresar
+00:08 +13: All tests passed!
