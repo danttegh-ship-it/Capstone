@@ -182,3 +182,94 @@ test("H03: un segundo ejecutor no entra mientras Auth esta pendiente", async () 
     null,
   );
 });
+
+for (const escenario of ["vencida", "distinta", "vigente"]) {
+  test(`T2: recuperar operacion ${escenario}`, async () => {
+    const e = await env();
+    await e.db
+      .doc(`usuarios/${UID.paciente}`)
+      .update({
+        activo: false,
+        operacionCuenta: {
+          id: "interrumpida",
+          accion: "desactivar",
+          estado: "ejecutando",
+          iniciadaEn: Date.now() - (escenario === "vigente" ? 60000 : 660000),
+        },
+      });
+    const invocar = () =>
+      call(e.cuentas.reintentarOperacionCuenta, UID.admin, "admin", {
+        uid: UID.paciente,
+        accion: escenario === "distinta" ? "activar" : "desactivar",
+      });
+    if (escenario !== "vencida") {
+      await assert.rejects(invocar(), { code: "failed-precondition" });
+      assert.equal(
+        (await e.db.doc(`usuarios/${UID.paciente}`).get()).data()
+          .operacionCuenta.id,
+        "interrumpida",
+      );
+    } else {
+      await invocar();
+      assert.equal(
+        (await e.db.doc(`usuarios/${UID.paciente}`).get()).data()
+          .operacionCuenta,
+        null,
+      );
+      assert.equal(e.auth.usuarios.get(UID.paciente).disabled, true);
+      const eventos = await e.db.collection("auditoria").get();
+      assert.ok(
+        eventos.docs.some(
+          (d) => d.data().accion === "reintentarOperacionCuenta",
+        ),
+      );
+    }
+  });
+}
+test("T2: nueva concesion invalida finalizar de un ejecutor antiguo", async () => {
+  const e = await env();
+  const ops = require("../operacionesCuenta").init(e.db, e.auth);
+  const vieja = await ops.preparar(UID.admin, UID.paciente, "desactivar");
+  await e.db
+    .doc(`usuarios/${UID.paciente}`)
+    .update({
+      operacionCuenta: { ...vieja.operacion, iniciadaEn: Date.now() - 660000 },
+    });
+  const nueva = await ops.preparar(UID.admin, UID.paciente, "desactivar");
+  assert.notEqual(nueva.operacion.id, vieja.operacion.id);
+  await assert.rejects(ops.finalizar(vieja, false), {
+    code: "failed-precondition",
+  });
+  await ops.reintentar(vieja);
+  assert.equal(
+    (await e.db.doc(`usuarios/${UID.paciente}`).get()).data().operacionCuenta
+      .estado,
+    "ejecutando",
+  );
+});
+
+test("T2: marcador legado sin fecha inicia espera sin ejecutar Auth", async () => {
+  const e = await env();
+  await e.db
+    .doc(`usuarios/${UID.paciente}`)
+    .update({
+      activo: false,
+      operacionCuenta: {
+        id: "legado",
+        accion: "desactivar",
+        estado: "ejecutando",
+      },
+    });
+  await assert.rejects(
+    call(e.cuentas.reintentarOperacionCuenta, UID.admin, "admin", {
+      uid: UID.paciente,
+      accion: "desactivar",
+    }),
+    { code: "failed-precondition" },
+  );
+  const marcador = (await e.db.doc(`usuarios/${UID.paciente}`).get()).data()
+    .operacionCuenta;
+  assert.ok(Number.isFinite(marcador.iniciadaEn));
+  assert.equal(marcador.id, "legado");
+  assert.equal(e.auth.usuarios.get(UID.paciente).disabled, false);
+});

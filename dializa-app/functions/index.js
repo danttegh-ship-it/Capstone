@@ -46,6 +46,7 @@ exports.crearCuentaAdministrador = cuentas.crearCuentaAdministrador;
 exports.solicitarRegistroConductor = cuentas.solicitarRegistroConductor;
 exports.aprobarConductor = cuentas.aprobarConductor;
 exports.activarDesactivarCuenta = cuentas.activarDesactivarCuenta;
+exports.reintentarOperacionCuenta = cuentas.reintentarOperacionCuenta;
 exports.eliminarCuenta = cuentas.eliminarCuenta;
 exports.registrarTokenFcm = cuentas.registrarTokenFcm;
 exports.eliminarTokenFcm = cuentas.eliminarTokenFcm;

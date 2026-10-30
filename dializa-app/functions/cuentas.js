@@ -278,16 +278,17 @@ function init(db, { autorizacion }, authInyectado = null) {
   // activarDesactivarCuenta / eliminarCuenta: con auto-proteccion y
   // proteccion del ultimo administrador (punto 9.10).
   // ---------------------------------------------------------------------
-  const activarDesactivarCuenta = onCall(async (request) => {
-    const { uid: actorUid } = await exigirAdmin(request);
-    const objetivoUid = validarUid(request.data?.uid);
-    if (typeof request.data?.activo !== "boolean")
-      throw new HttpsError("invalid-argument", "activo debe ser booleano.");
-    const activo = request.data.activo;
+  async function cambiarActivo(
+    actorUid,
+    objetivoUid,
+    activo,
+    { soloRetomar = false } = {},
+  ) {
     const ctx = await operaciones.preparar(
       actorUid,
       objetivoUid,
       activo ? "activar" : "desactivar",
+      { soloRetomar },
     );
     try {
       await autorizacion.sincronizarCuenta(objetivoUid);
@@ -313,12 +314,31 @@ function init(db, { autorizacion }, authInyectado = null) {
       await operaciones.reintentar(ctx);
       throw error;
     }
-  });
+  }
+  const activarDesactivarCuenta = onCall(
+    { timeoutSeconds: 120 },
+    async (request) => {
+      const { uid: actorUid } = await exigirAdmin(request);
+      if (typeof request.data?.activo !== "boolean")
+        throw new HttpsError("invalid-argument", "activo debe ser booleano.");
+      return cambiarActivo(
+        actorUid,
+        validarUid(request.data?.uid),
+        request.data.activo,
+      );
+    },
+  );
 
   // Una unica ruta de baja para cualquier rol. El perfil bloqueado se
   // conserva hasta que archivado, Auth y limpieza hayan terminado.
-  async function darDeBaja(actorUid, objetivoUid) {
-    const ctx = await operaciones.preparar(actorUid, objetivoUid, "eliminar");
+  async function darDeBaja(
+    actorUid,
+    objetivoUid,
+    { soloRetomar = false } = {},
+  ) {
+    const ctx = await operaciones.preparar(actorUid, objetivoUid, "eliminar", {
+      soloRetomar,
+    });
     try {
       await autorizacion.sincronizarCuenta(objetivoUid);
       const choferes = new Set();
@@ -403,10 +423,37 @@ function init(db, { autorizacion }, authInyectado = null) {
       throw error;
     }
   }
-  const eliminarCuenta = onCall(async (request) => {
+  const eliminarCuenta = onCall({ timeoutSeconds: 120 }, async (request) => {
     const { uid: actorUid } = await exigirAdmin(request);
     return darDeBaja(actorUid, validarUid(request.data?.uid));
   });
+
+  const reintentarOperacionCuenta = onCall(
+    { timeoutSeconds: 120 },
+    async (request) => {
+      const { uid: actorUid } = await exigirAdmin(request);
+      const objetivoUid = validarUid(request.data?.uid);
+      const accion = request.data?.accion;
+      if (!["activar", "desactivar", "eliminar"].includes(accion))
+        throw new HttpsError(
+          "invalid-argument",
+          "Accion de recuperacion invalida.",
+        );
+      const resultado =
+        accion === "eliminar"
+          ? await darDeBaja(actorUid, objetivoUid, { soloRetomar: true })
+          : await cambiarActivo(actorUid, objetivoUid, accion === "activar", {
+              soloRetomar: true,
+            });
+      await registrarAuditoria(db, {
+        accion: "reintentarOperacionCuenta",
+        actorUid,
+        objetivoUid,
+        detalle: { accionRetomada: accion },
+      });
+      return resultado;
+    },
+  );
 
   // ---------------------------------------------------------------------
   // registrarTokenFcm: guarda/actualiza el token de notificaciones push
@@ -486,7 +533,7 @@ function init(db, { autorizacion }, authInyectado = null) {
     return { ok: true };
   });
 
-  const eliminarPaciente = onCall(async (request) => {
+  const eliminarPaciente = onCall({ timeoutSeconds: 120 }, async (request) => {
     const { uid: actorUid } = await exigirAdmin(request);
     const objetivoUid = validarUid(request.data?.uid);
     const doc = await db.collection("usuarios").doc(objetivoUid).get();
@@ -504,6 +551,7 @@ function init(db, { autorizacion }, authInyectado = null) {
     solicitarRegistroConductor,
     aprobarConductor,
     activarDesactivarCuenta,
+    reintentarOperacionCuenta,
     eliminarCuenta,
     registrarTokenFcm,
     eliminarTokenFcm,

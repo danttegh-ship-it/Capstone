@@ -12,10 +12,11 @@ function perfilOperativo(datos) {
     !datos.bajaEnCurso
   );
 }
+const PLAZO_REINTENTO_MS = 10 * 60 * 1000;
 function init(db, auth) {
-  async function preparar(actorUid, uid, accion) {
+  async function preparar(actorUid, uid, accion, { soloRetomar = false } = {}) {
     const ref = db.collection("usuarios").doc(uid);
-    return db.runTransaction(async (tx) => {
+    const resultado = await db.runTransaction(async (tx) => {
       const [actor, objetivo] = await Promise.all([
         tx.get(db.collection("usuarios").doc(actorUid)),
         tx.get(ref),
@@ -43,15 +44,43 @@ function init(db, auth) {
             "failed-precondition",
             "Hay otra operacion pendiente. Reintenta esa operacion primero.",
           );
-        if (datos.operacionCuenta.estado !== "reintentar")
+        const iniciada = datos.operacionCuenta.iniciadaEn;
+        if (
+          !Number.isFinite(iniciada) &&
+          datos.operacionCuenta.estado !== "reintentar"
+        ) {
+          // Marcadores de la version anterior no tienen fecha: empezar una
+          // espera completa antes de permitir recuperarlos, nunca adivinar edad.
+          tx.update(ref, {
+            operacionCuenta: {
+              ...datos.operacionCuenta,
+              iniciadaEn: Date.now(),
+            },
+          });
+          return { esperar: true };
+        }
+        const vencida =
+          Number.isFinite(iniciada) &&
+          Date.now() - iniciada >= PLAZO_REINTENTO_MS;
+        if (datos.operacionCuenta.estado !== "reintentar" && !vencida)
           throw new HttpsError(
             "failed-precondition",
             "La operacion de cuenta sigue en ejecucion.",
           );
-        const operacion = { ...datos.operacionCuenta, estado: "ejecutando" };
+        const operacion = {
+          ...datos.operacionCuenta,
+          id: randomUUID(),
+          estado: "ejecutando",
+          iniciadaEn: Date.now(),
+        };
         tx.update(ref, { operacionCuenta: operacion });
         return { ref, datos, operacion };
       }
+      if (soloRetomar)
+        throw new HttpsError(
+          "failed-precondition",
+          "No hay una operacion pendiente que retomar.",
+        );
       if (
         datos.rol === "admin" &&
         datos.activo === true &&
@@ -105,7 +134,12 @@ function init(db, auth) {
           );
         }
       }
-      const operacion = { id: randomUUID(), accion, estado: "ejecutando" };
+      const operacion = {
+        id: randomUUID(),
+        accion,
+        estado: "ejecutando",
+        iniciadaEn: Date.now(),
+      };
       tx.update(ref, {
         activo: false,
         operacionCuenta: operacion,
@@ -113,6 +147,12 @@ function init(db, auth) {
       });
       return { ref, datos, operacion };
     });
+    if (resultado.esperar)
+      throw new HttpsError(
+        "failed-precondition",
+        "Operacion anterior sin fecha: espera diez minutos antes de retomarla.",
+      );
+    return resultado;
   }
   async function aplicarAuth(uid, activo, eliminar = false) {
     try {
@@ -154,4 +194,4 @@ function init(db, auth) {
   }
   return { preparar, aplicarAuth, finalizar, reintentar };
 }
-module.exports = { init, perfilOperativo };
+module.exports = { init, perfilOperativo, PLAZO_REINTENTO_MS };
