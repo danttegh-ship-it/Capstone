@@ -1,0 +1,14 @@
+{
+  "node": "20.20.1",
+  "javascript_sintaxis": 35,
+  "errores": [],
+  "reservados_modificados": {
+    "dializa-app/functions/viajes.js": false,
+    "dializa-app/functions/validaciones.js": false,
+    "dializa-app/firestore.rules": false,
+    "dializa-app/database.rules.json": false,
+    "dializa-app/pubspec.yaml": false,
+    "dializa-app/pubspec.lock": false
+  },
+  "ios_plist_valido": true
+}

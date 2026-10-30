@@ -1,5 +1,7 @@
 # Dializa App — Proyecto APT Capstone (PTY4614)
 
+> Revisión30-10-2026: [entrega de tareas1–7 y estado de validación](dializa-app/docs/REVISION_BLOQUE2_TAREAS1_7.md). H08 sigue pendiente de aceptación y prueba física. La tarea6 tiene APK; el despliegue de pruebas y teléfono continúan pendientes.
+
 Repositorio vigente: https://github.com/danttegh-ship-it/Capstone
 
 Entrega de correcciones técnicas: [H01–H10, pruebas y pendientes](dializa-app/docs/REVISION_H01_H10_CODEX.md). Codex programa e integra por commits; Claude revisa y prepara documentación/PPT. El material académico inferior corresponde a cortes históricos, no acredita por sí solo la versión actual.

@@ -1,0 +1,36 @@
+00:00 +0: loading C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart
+00:00 +0: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +1: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +2: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +3: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +4: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +5: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +6: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +7: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +8: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +9: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +10: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +11: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:00 +12: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/controles_viaje_test.dart: H09 cancelar se ofrece en asignado
+00:01 +13: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: T1 boton Finalizar continua con GPS en cuarentena
+00:01 +14: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: T1 boton Finalizar continua con GPS en cuarentena
+00:01 +15: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: T1 boton Finalizar continua con GPS en cuarentena
+00:01 +16: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: T1 boton Finalizar continua con GPS en cuarentena
+00:01 +17: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: T1 boton Finalizar continua con GPS en cuarentena
+00:01 +18: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:01 +19: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:01 +20: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:01 +21: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:01 +22: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:02 +23: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:02 +24: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud sin direcciones no llama al backend
+00:02 +25: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 pendiente solo ofrece Aceptar y evita doble llamada
+00:03 +26: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 Rechazar solo despues de aceptar y antes de iniciar: asignado
+00:03 +27: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 Rechazar solo despues de aceptar y antes de iniciar: en_viaje
+00:03 +28: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente autorizada
+00:03 +29: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente otra-instancia
+00:03 +30: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente vencida
+00:03 +31: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente antigua
+00:03 +32: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 publicaciones serializadas y pausa invalida las pendientes
+00:03 +33: C:/Users/[usuario]/Documents/Codex/2026-10-23/files-mentioned-by-the-user-respaldo/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 resumen distingue muestras observadas de ausencia de GPS
+00:03 +34: All tests passed!

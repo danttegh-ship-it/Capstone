@@ -1,0 +1,88 @@
+!  emulators: You are not currently authenticated so some features may not work correctly. Please run firebase login to authenticate the CLI.
+i  emulators: Starting emulators: firestore, database
+i  emulators: Detected demo project ID "demo-dializa-h10", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
++  firestore: Firestore Emulator UI websocket is running on 9150.
+i  database: Database Emulator logging to database-debug.log
+i  Running script: node node_modules/mocha/bin/mocha.js tests/*.rules.test.js --timeout 20000
+
+
+  H02/H10 RTDB
+[2026-10-30T10:15:59.470Z]  @firebase/database: FIREBASE WARNING: update at /ubicaciones/pendiente failed: permission_denied
+[2026-10-30T10:15:59.529Z]  @firebase/database: FIREBASE WARNING: update at /ubicaciones/chofer failed: permission_denied
+    √ update conserva autorizacion y exige chofer aprobado/activo (298ms)
+    √ solo paciente autorizado, chofer propio y admin activo leen (262ms)
+[2026-10-30T10:16:00.329Z]  @firebase/database: FIREBASE WARNING: set at /ubicaciones/chofer/pacienteAutorizado failed: permission_denied
+[2026-10-30T10:16:00.332Z]  @firebase/database: FIREBASE WARNING: set at /ubicaciones/chofer/viajeAutorizado failed: permission_denied
+[2026-10-30T10:16:00.335Z]  @firebase/database: FIREBASE WARNING: set at /ubicaciones/chofer/autorizacionVersion failed: permission_denied
+[2026-10-30T10:16:00.338Z]  @firebase/database: FIREBASE WARNING: set at /ubicaciones/chofer/reconciliacionGeneracion failed: permission_denied
+[2026-10-30T10:16:00.340Z]  @firebase/database: FIREBASE WARNING: set at /ubicaciones/chofer/autorizacionValidaHasta failed: permission_denied
+[2026-10-30T10:16:00.343Z]  @firebase/database: FIREBASE WARNING: set at /ubicaciones/chofer failed: permission_denied
+[2026-10-30T10:16:00.392Z]  @firebase/database: FIREBASE WARNING: set at /cuentasAutorizadas/chofer/activo failed: permission_denied
+    √ clientes no modifican fencing ni espejo, ni reemplazan el nodo (95ms)
+[2026-10-30T10:16:00.648Z]  @firebase/database: FIREBASE WARNING: update at /ubicaciones/chofer failed: permission_denied
+    √ cuenta desactivada o espejo vencido pierde lectura y escritura (237ms)
+[2026-10-30T10:16:01.086Z]  @firebase/database: FIREBASE WARNING: update at /ubicaciones/chofer failed: permission_denied
+[2026-10-30T10:16:01.133Z]  @firebase/database: FIREBASE WARNING: update at /ubicaciones/chofer failed: permission_denied
+[2026-10-30T10:16:01.196Z]  @firebase/database: FIREBASE WARNING: update at /ubicaciones/chofer failed: permission_denied
+[2026-10-30T10:16:01.260Z]  @firebase/database: FIREBASE WARNING: update at /ubicaciones/chofer failed: permission_denied
+    √ coordenadas fuera de rango o tipos incorrectos fallan (215ms)
+
+  H10 privacidad y consultas
+    √ paciente lee su perfil y su viaje, no los de otro (766ms)
+    √ chofer aprobado accede al paciente asignado y a pendientes, no a todos los perfiles (427ms)
+    √ el admin activo puede consultar paneles e historial; desactivado no (209ms)
+    √ tokens y sesiones son privados incluso para admin (256ms)
+[2026-10-30T10:16:03.824Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c80 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L34, false for 'create' @ L49, false for 'update' @ L34, false for 'update' @ L49
+[2026-10-30T10:16:03.857Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c81 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L39, false for 'create' @ L49, false for 'update' @ L39, false for 'update' @ L49
+[2026-10-30T10:16:03.892Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c82 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L23, false for 'create' @ L49, false for 'update' @ L23, false for 'update' @ L49
+[2026-10-30T10:16:03.916Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c83 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L45, false for 'create' @ L49, false for 'update' @ L45, false for 'update' @ L49
+[2026-10-30T10:16:03.939Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c84 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L47, false for 'create' @ L49, false for 'update' @ L47, false for 'update' @ L49
+[2026-10-30T10:16:03.970Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c85 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L25, false for 'create' @ L49, false for 'update' @ L25, false for 'update' @ L49
+[2026-10-30T10:16:03.997Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c86 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L34, false for 'create' @ L49, false for 'update' @ L34, false for 'update' @ L49
+[2026-10-30T10:16:04.017Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c87 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L39, false for 'create' @ L49, false for 'update' @ L39, false for 'update' @ L49
+[2026-10-30T10:16:04.039Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c88 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L23, false for 'create' @ L49, false for 'update' @ L23, false for 'update' @ L49
+[2026-10-30T10:16:04.064Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c89 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L45, false for 'create' @ L49, false for 'update' @ L45, false for 'update' @ L49
+[2026-10-30T10:16:04.098Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c8a error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L47, false for 'create' @ L49, false for 'update' @ L47, false for 'update' @ L49
+[2026-10-30T10:16:04.120Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c8b error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L25, false for 'create' @ L49, false for 'update' @ L25, false for 'update' @ L49
+[2026-10-30T10:16:04.153Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c8c error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L34, false for 'create' @ L49, false for 'update' @ L34, false for 'update' @ L49
+[2026-10-30T10:16:04.183Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c8d error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L39, false for 'create' @ L49, false for 'update' @ L39, false for 'update' @ L49
+[2026-10-30T10:16:04.205Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c8e error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L23, false for 'create' @ L49, false for 'update' @ L23, false for 'update' @ L49
+[2026-10-30T10:16:04.239Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c8f error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L45, false for 'create' @ L49, false for 'update' @ L45, false for 'update' @ L49
+[2026-10-30T10:16:04.270Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c90 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L47, false for 'create' @ L49, false for 'update' @ L47, false for 'update' @ L49
+[2026-10-30T10:16:04.299Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c91 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L25, false for 'create' @ L49, false for 'update' @ L25, false for 'update' @ L49
+[2026-10-30T10:16:04.386Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8e994c93 error. Code: 7 Message: 7 PERMISSION_DENIED:
+evaluation error at L43:20 for 'create' @ L43, false for 'create' @ L49, evaluation error at L43:20 for 'update' @ L43, false for 'update' @ L49, false for 'update' @ L43, false for 'update' @ L49
+    √ ningun cliente escribe estado o permisos; paciente conserva asistencia propia (592ms)
+    √ usuario sin perfil y anonimato no leen viajes (110ms)
+    √ T7 consultas de solicitudes propias, aceptadas e historial paginado (255ms)
+
+
+  12 passing (8s)
+
++  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  database: Stopping Database Emulator
+!  Database Emulator has exited upon receiving signal: SIGINT
+i  firestore: Stopping Firestore Emulator
+!  Firestore Emulator has exited upon receiving signal: SIGINT
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

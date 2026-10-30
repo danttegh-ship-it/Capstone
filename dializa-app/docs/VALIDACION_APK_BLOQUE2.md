@@ -20,4 +20,3 @@ Estado de los pasos solicitados:
 | Notificación recibida | No comprobada: no se ejecutó la prueba en teléfono. |
 
 El APK conserva la configuración Firebase de la base. No es un APK reconfigurado para un proyecto de pruebas identificado y no se debe instalar para esa prueba hasta preparar su configuración. No se lanzó la aplicación contra datos reales. Los emuladores usan exclusivamente demo-dializa-h10 y no equivalen a un despliegue en nube.
-
