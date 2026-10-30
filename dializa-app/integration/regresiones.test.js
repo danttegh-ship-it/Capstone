@@ -268,3 +268,11 @@ test("T1: lote mixto emulado conserva el timestamp atrasado y rechaza por indice
   await avanzar(viajeId, "en_viaje", "finalizado");
   await assert.rejects(call(gps.registrarMuestrasGps, "chofer_001", "chofer", lote), {code: "failed-precondition"});
 });
+
+test("T2: retoma concesion vencida con Firestore y Auth emulados", async () => {
+  await db.doc("usuarios/paciente_01").update({activo: false, operacionCuenta: {id: "interrumpida", accion: "desactivar", estado: "ejecutando", iniciadaEn: Date.now()-660000}});
+  await assert.rejects(call(cuentas.reintentarOperacionCuenta, "admin_0001", "admin", {uid: "paciente_01", accion: "activar"}), {code: "failed-precondition"});
+  await call(cuentas.reintentarOperacionCuenta, "admin_0001", "admin", {uid: "paciente_01", accion: "desactivar"});
+  assert.equal((await auth.getUser("paciente_01")).disabled, true);
+  assert.equal((await db.doc("usuarios/paciente_01").get()).data().operacionCuenta, null);
+});
