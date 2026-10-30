@@ -64,9 +64,50 @@ async function main() {
     "Migracion completada; no se modificaron roles ni se activaron cuentas.",
   );
 }
-main().catch(() => {
-  console.error(
-    "Migracion no completada; revisar acceso y configuracion sin publicar credenciales.",
-  );
-  process.exitCode = 1;
-});
+function describirErrorSeguro(error) {
+  const codigo = /^[a-zA-Z0-9_./-]{1,80}$/.test(String(error?.code || "error"))
+    ? String(error?.code || "error")
+    : "error";
+  let mensaje = String(error?.message || "Error sin mensaje");
+  for (const [nombre, valor] of Object.entries(process.env)) {
+    if (
+      /TOKEN|SECRET|PASSWORD|PRIVATE_KEY|CREDENTIAL|API_KEY/i.test(nombre) &&
+      valor?.length >= 8
+    )
+      mensaje = mensaje.split(valor).join("[OCULTO]");
+  }
+  mensaje = mensaje
+    .replace(
+      /-----BEGIN[^-]*PRIVATE KEY-----[\s\S]*?-----END[^-]*PRIVATE KEY-----/g,
+      "[CLAVE OCULTA]",
+    )
+    .replace(/Bearer\s+[a-zA-Z0-9._~+/-]+/gi, "Bearer [OCULTO]")
+    .replace(
+      /eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g,
+      "[TOKEN OCULTO]",
+    )
+    .replace(
+      /(token|api[_-]?key|password|secret|authorization|private_key)(["']?\s*[:=]\s*["']?)[^"'&\s,;]+/gi,
+      "$1$2[OCULTO]",
+    )
+    .replace(/https?:\/\/[^\s"']+/gi, (valor) => {
+      try {
+        const url = new URL(valor);
+        if (url.username || url.password) {
+          url.username = "OCULTO";
+          url.password = "OCULTO";
+        }
+        if (url.search) url.search = "?parametros=OCULTOS";
+        return url.toString();
+      } catch {
+        return "[URL OCULTA]";
+      }
+    });
+  return `${codigo}: ${mensaje.slice(0, 500)}`;
+}
+if (require.main === module)
+  main().catch((error) => {
+    console.error("Migracion no completada:", describirErrorSeguro(error));
+    process.exitCode = 1;
+  });
+module.exports = { main, describirErrorSeguro };

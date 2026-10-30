@@ -41,14 +41,14 @@ ok 8 - A: el update() de lat/lng/timestamp del chofer NO borra pacienteAutorizad
   duration_ms: 6.2237
   ...
 # No se pudo reconciliar la autorizacion de ubicacion de chofer_uid_001: Error: RTDB no disponible (simulado)
-#     at FakeRtdbRef._chequeo (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:285:33)
-#     at FakeRtdbRef.get (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:288:10)
-#     at FakeRtdbRef.once (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:282:17)
-#     at conVistaViva (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:97:15)
-#     at reconciliar (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:108:12)
-#     at Object.reconciliarSeguro (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:207:21)
-#     at C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\viajes.js:393:57
-#     at async TestContext.<anonymous> (C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\autorizacion.test.js:272:13)
+#     at FakeRtdbRef._chequeo (C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:285:33)
+#     at FakeRtdbRef.get (C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:288:10)
+#     at FakeRtdbRef.once (C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\test\\helpers\\memoria.js:282:17)
+#     at conVistaViva (C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:97:15)
+#     at reconciliar (C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:108:12)
+#     at Object.reconciliarSeguro (C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\autorizacionUbicacion.js:207:21)
+#     at C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\viajes.js:393:57
+#     at async TestContext.<anonymous> (C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\test\\autorizacion.test.js:272:13)
 #     at async Test.run (node:internal/test_runner/test:797:9)
 #     at async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
 # Subtest: A: si RTDB falla, la operacion de negocio SE CONFIRMA y se informa autorizacionSincronizada:false; el admin puede reparar
@@ -355,8 +355,8 @@ ok 67 - el flag RESTRICCION_GEOGRAFICA_CHILE_ACTIVA (apagado por defecto) tambie
   ...
 # \# entorno de test: firebase-functions REAL; Firestore/RTDB/Auth = dobles en memoria
 # 38 pasados, 0 fallidos de 38 tests.
-# Subtest: C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\validaciones.test.js
-ok 9 - C:\\Users\\maver\\Documents\\Codex\\t\\backend\\src\\test\\validaciones.test.js
+# Subtest: C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\test\\validaciones.test.js
+ok 9 - C:/Users/[usuario]\\Documents\\Codex\\t\\backend\\src\\test\\validaciones.test.js
   ---
   duration_ms: 2133.2248
   ...

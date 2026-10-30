@@ -13,7 +13,7 @@ module.exports = {
   // Secret Manager ni gastar cuota.
   GEOAPIFY_HABILITADO: false,
 
-  // Puntos 11.9/11.10: restriccion geografica a Chile continental en
+  // Punto 11.10: restriccion geografica a Chile continental en
   // validarCoordenada(). Desactivada por defecto (no aplica aun).
   RESTRICCION_GEOGRAFICA_CHILE_ACTIVA: false,
 };

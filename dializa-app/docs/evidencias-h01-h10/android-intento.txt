@@ -1,9 +1,9 @@
 Running Gradle task 'assembleDebug'...
-Checking the license for package NDK (Side by side) 28.2.13676358 in C:\Users\maver\AppData\Local\Android\Sdk\licenses
+Checking the license for package NDK (Side by side) 28.2.13676358 in C:/Users/[usuario]\AppData\Local\Android\Sdk\licenses
 License for package NDK (Side by side) 28.2.13676358 accepted.
 Preparing "Install NDK (Side by side) 28.2.13676358 v.28.2.13676358".
 "Install NDK (Side by side) 28.2.13676358 v.28.2.13676358" ready.
-Installing NDK (Side by side) 28.2.13676358 in C:\Users\maver\AppData\Local\Android\Sdk\ndk\28.2.13676358
+Installing NDK (Side by side) 28.2.13676358 in C:/Users/[usuario]\AppData\Local\Android\Sdk\ndk\28.2.13676358
 "Install NDK (Side by side) 28.2.13676358 v.28.2.13676358" complete.
 "Install NDK (Side by side) 28.2.13676358 v.28.2.13676358" finished.
 WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): cloud_functions, firebase_database
@@ -14,25 +14,25 @@ If no such version exists, report the issue to the plugin. If necessary, here is
 an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
 
 If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
-Checking the license for package Android SDK Platform 36 in C:\Users\maver\AppData\Local\Android\Sdk\licenses
+Checking the license for package Android SDK Platform 36 in C:/Users/[usuario]\AppData\Local\Android\Sdk\licenses
 License for package Android SDK Platform 36 accepted.
 Preparing "Install Android SDK Platform 36 (revision 2)".
 "Install Android SDK Platform 36 (revision 2)" ready.
-Installing Android SDK Platform 36 in C:\Users\maver\AppData\Local\Android\Sdk\platforms\android-36
+Installing Android SDK Platform 36 in C:/Users/[usuario]\AppData\Local\Android\Sdk\platforms\android-36
 "Install Android SDK Platform 36 (revision 2)" complete.
 "Install Android SDK Platform 36 (revision 2)" finished.
-Checking the license for package Android SDK Platform 34 in C:\Users\maver\AppData\Local\Android\Sdk\licenses
+Checking the license for package Android SDK Platform 34 in C:/Users/[usuario]\AppData\Local\Android\Sdk\licenses
 License for package Android SDK Platform 34 accepted.
 Preparing "Install Android SDK Platform 34 (revision 3)".
 "Install Android SDK Platform 34 (revision 3)" ready.
-Installing Android SDK Platform 34 in C:\Users\maver\AppData\Local\Android\Sdk\platforms\android-34
+Installing Android SDK Platform 34 in C:/Users/[usuario]\AppData\Local\Android\Sdk\platforms\android-34
 "Install Android SDK Platform 34 (revision 3)" complete.
 "Install Android SDK Platform 34 (revision 3)" finished.
-Checking the license for package Android SDK Platform 35 in C:\Users\maver\AppData\Local\Android\Sdk\licenses
+Checking the license for package Android SDK Platform 35 in C:/Users/[usuario]\AppData\Local\Android\Sdk\licenses
 License for package Android SDK Platform 35 accepted.
 Preparing "Install Android SDK Platform 35 (revision 2)".
 "Install Android SDK Platform 35 (revision 2)" ready.
-Installing Android SDK Platform 35 in C:\Users\maver\AppData\Local\Android\Sdk\platforms\android-35
+Installing Android SDK Platform 35 in C:/Users/[usuario]\AppData\Local\Android\Sdk\platforms\android-35
 "Install Android SDK Platform 35 (revision 2)" complete.
 "Install Android SDK Platform 35 (revision 2)" finished.
 Building flutter tool...
