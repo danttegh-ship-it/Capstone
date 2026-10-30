@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:dializa_app/screens/solicitudes_chofer_screen.dart';
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dializa_app/services/cola_gps.dart';
@@ -182,4 +184,35 @@ void main() {
       expect(calls, 1);
     },
   );
+  testWidgets('T1 boton Finalizar continua con GPS en cuarentena', (
+    tester,
+  ) async {
+    final queue = ColaGps(
+      read: () async => null,
+      write: (_) async {},
+      send: (_) async => throw FalloGps('failed-precondition'),
+    );
+    await queue.add(trip, {'lat': -33, 'lng': -70, 'timestampMs': 1234});
+    var cierres = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TarjetaSolicitud(
+            estado: 'en_viaje',
+            ejecutar: (accion, nuevoEstado) async {
+              expect(accion, 'actualizarEstadoViaje');
+              expect(nuevoEstado, 'finalizado');
+              await queue.prepararCierre('instancia_A');
+              cierres++;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Finalizar viaje'));
+    await tester.pumpAndSettle();
+    expect(cierres, 1);
+    expect(queue.enCuarentena, 1);
+    expect(queue.pendientes, 0);
+  });
 }
