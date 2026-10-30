@@ -251,3 +251,20 @@ test("H03: registro no reactiva conductor deshabilitado en Auth real", async () 
     false,
   );
 });
+
+test("T1: lote mixto emulado conserva el timestamp atrasado y rechaza por indice", async () => {
+  const {viajeId} = await asignar();
+  await avanzar(viajeId, "asignado", "conductor_en_camino");
+  await avanzar(viajeId, "conductor_en_camino", "conductor_llego");
+  await avanzar(viajeId, "conductor_llego", "en_viaje");
+  const t = Date.now()-120000;
+  const lote = {coleccion: "viajes", id: "paciente_01", viajeId, muestras: [
+    {lat: -33, lng: -70, timestampMs: t}, {lat: 100, lng: -70, timestampMs: t+1},
+  ]};
+  const result = await call(gps.registrarMuestrasGps, "chofer_001", "chofer", lote);
+  assert.equal(result.guardadas, 1);
+  assert.equal(result.rechazadas[0].indice, 1);
+  assert.equal((await db.doc(`gps_viajes/${viajeId}/muestras/${t}`).get()).data().t, t);
+  await avanzar(viajeId, "en_viaje", "finalizado");
+  await assert.rejects(call(gps.registrarMuestrasGps, "chofer_001", "chofer", lote), {code: "failed-precondition"});
+});
