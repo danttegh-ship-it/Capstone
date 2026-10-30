@@ -31,11 +31,15 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
         if (FirebaseAuth.instance.currentUser?.uid != uid) {
           throw StateError('La sesion del chofer cambio.');
         }
-        final result =
-            await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
-                .httpsCallable('registrarMuestrasGps')
-                .call<Map<String, dynamic>>(data);
-        return result.data;
+        try {
+          final result =
+              await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+                  .httpsCallable('registrarMuestrasGps')
+                  .call<Map<String, dynamic>>(data);
+          return result.data;
+        } on FirebaseFunctionsException catch (error) {
+          throw FalloGps(error.code);
+        }
       },
     );
   }
@@ -50,9 +54,14 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _manual = [],
       _solicitudes = [];
   Map<String, dynamic>? _actual;
+  String? _cierreId;
   bool _activo = true, _cerrado = false, _iniciando = false, _enviando = false;
   String estado = 'Preparando seguimiento GPS';
   void _mensaje(String value) {
+    if (cola.enCuarentena > 0) {
+      value +=
+          ' Hay ${cola.enCuarentena} muestras GPS apartadas para revision; no bloquean el viaje.';
+    }
     if (_cerrado) return;
     estado = value;
     notifyListeners();
@@ -112,6 +121,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     if (candidatos.length != 1) {
+      _cierreId = null;
       await _pararSensor();
       _actual = null;
       _mensaje(
@@ -122,6 +132,8 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     final trip = candidatos.single;
+    if (_cierreId == trip['viajeId']) return;
+    _cierreId = null;
     if (_actual?['viajeId'] == trip['viajeId'] && _posiciones != null) return;
     _iniciando = true;
     try {
@@ -197,12 +209,14 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _enviar() async {
     if (_cerrado ||
         _enviando ||
+        _cierreId != null ||
         FirebaseAuth.instance.currentUser?.uid != uid) {
       return;
     }
     _enviando = true;
     try {
       await cola.flush();
+      _mensaje('GPS: ${cola.pendientes} muestras pendientes.');
     } catch (_) {
       _mensaje(
         'GPS pendiente de envio (${cola.pendientes}). Revisa la conexion antes de finalizar.',
@@ -213,10 +227,15 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _prepararCierre(String viajeId) async {
+    _cierreId = viajeId;
     await _pararSensor();
-    await cola.flush(
-      viajeId,
-    ); // Si falla, no se cierra el viaje ni se borra el lote.
+    try {
+      await cola.prepararCierre(viajeId);
+    } catch (_) {
+      _cierreId = null;
+      rethrow;
+    }
+    _mensaje('GPS preparado para finalizar.');
   }
 
   static Future<void> prepararCierre(String viajeId) async {
@@ -227,6 +246,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
 
   static Future<void> reanudarTodos() async {
     for (final tracker in _instancias.toList()) {
+      tracker._cierreId = null;
       tracker._manual =
           (await tracker._db
                   .collection('viajes')

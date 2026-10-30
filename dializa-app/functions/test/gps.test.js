@@ -213,7 +213,7 @@ test("GPS: carrera con el cierre -- finalizar y registrar a la vez: las muestras
   );
 });
 
-test("GPS: coordenadas invalidas, timestamps fuera de ventana, lotes vacios o gigantes se rechazan completos", async () => {
+test("GPS: coordenadas invalidas, timestamps invalidos se aislan; envelope vacio o gigante falla", async () => {
   const { e, viajeId } = await entorno();
   const ahora = Date.now();
   const malos = [
@@ -228,17 +228,18 @@ test("GPS: coordenadas invalidas, timestamps fuera de ventana, lotes vacios o gi
     "no-es-arreglo",
   ];
   for (const lote of malos) {
-    const err = await error(gps(e, lote));
-    assert.equal(
-      err && err.code,
-      "invalid-argument",
-      JSON.stringify(lote).slice(0, 60),
-    );
+    if (Array.isArray(lote) && lote.length >= 1 && lote.length <= 50) {
+      const r = await gps(e, lote);
+      assert.equal(r.rechazadas.length, lote.length == 2 ? 1 : lote.length);
+      assert.equal(r.guardadas, lote.length == 2 ? 1 : 0);
+    } else {
+      assert.equal((await error(gps(e, lote))).code, "invalid-argument");
+    }
   }
   assert.equal(
     (await muestras(e, viajeId)).length,
-    0,
-    "un lote invalido no guarda NINGUNA muestra",
+    1,
+    "la muestra valida del lote mixto se conserva",
   );
 });
 
@@ -247,18 +248,21 @@ test("GPS: tope de 5000 muestras por viaje", async () => {
   await e.db
     .doc(`gps_viajes/${viajeId}`)
     .set({ viajeId, conteo: 4990, primerTs: 1, ultimoTs: 2 });
-  const err = await error(
-    gps(
-      e,
-      Array.from({ length: 20 }, (_, i) => muestra(i)),
+  const r = await gps(
+    e,
+    Array.from({ length: 20 }, (_, i) => muestra(i)),
+  );
+  assert.equal(r.guardadas, 10);
+  assert.equal(r.rechazadas.length, 10);
+  assert.equal((await muestras(e, viajeId)).length, 10);
+  const repetido = await gps(
+    e,
+    Array.from({ length: 10 }, (_, i) =>
+      muestra(i, { timestampMs: Date.now() - 1000 + i }),
     ),
   );
-  assert.equal(err.code, "resource-exhausted");
-  assert.equal((await muestras(e, viajeId)).length, 0);
-  await gps(
-    e,
-    Array.from({ length: 10 }, (_, i) => muestra(i)),
-  ); // llega justo a 5000
+  assert.equal(repetido.guardadas, 0);
+  assert.equal(repetido.rechazadas.length, 10);
   assert.equal(
     (await e.db.doc(`gps_viajes/${viajeId}`).get()).data().conteo,
     5000,
@@ -299,8 +303,21 @@ test("H08: lote offline de la misma instancia se conserva hasta ocho horas", asy
   const r = await gps(e, [muestra(1, { timestampMs: Date.now() - 3600000 })]);
   assert.equal(r.guardadas, 1);
   assert.equal((await muestras(e, viajeId)).length, 1);
-  await assert.rejects(
-    gps(e, [muestra(1, { timestampMs: Date.now() - 10800000 })]),
-    { code: "invalid-argument" },
-  );
+  const rechazado = await gps(e, [
+    muestra(1, { timestampMs: Date.now() - 10800000 }),
+  ]);
+  assert.equal(rechazado.rechazadas.length, 1);
+});
+
+test("T1: lote mixto y reloj atrasado mas de 60 segundos conservan timestamps", async () => {
+  const { e, viajeId } = await entorno("en_viaje");
+  const t = Date.now() - 120000;
+  const r = await gps(e, [
+    muestra(1, { timestampMs: t }),
+    muestra(2, { lat: 999 }),
+    muestra(3, { timestampMs: Date.now() - 600000 }),
+  ]);
+  assert.equal(r.guardadas, 1);
+  assert.deepEqual(r.rechazadas.map((x) => x.indice).sort(), [1, 2]);
+  assert.equal((await muestras(e, viajeId))[0].t, t);
 });

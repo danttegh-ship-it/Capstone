@@ -57,11 +57,32 @@ function init(db, cuentas) {
       );
     }
     const id = validarUid(request.data && request.data.id);
-    const muestras = validarMuestrasGps(
-      request.data && request.data.muestras,
-      Date.now(),
-      8 * 60 * 60 * 1000,
-    );
+    const raw = request.data?.muestras;
+    if (!Array.isArray(raw) || raw.length < 1 || raw.length > 50)
+      throw new HttpsError(
+        "invalid-argument",
+        "Se requieren entre 1 y 50 muestras.",
+      );
+    const ahora = Date.now();
+    const candidatas = [],
+      rechazadasValidacion = [];
+    raw.forEach((muestra, indice) => {
+      try {
+        const [validada] = validarMuestrasGps(
+          [muestra],
+          ahora,
+          8 * 60 * 60 * 1000,
+        );
+        candidatas.push({ ...validada, indice });
+      } catch (error) {
+        if (error.code !== "invalid-argument") throw error;
+        rechazadasValidacion.push({
+          indice,
+          codigo: "invalid-argument",
+          motivo: "Muestra fuera de los limites GPS permitidos.",
+        });
+      }
+    });
 
     await exigirLimiteTasa(db, uid, "registrarMuestrasGps", 60000, 30);
 
@@ -89,11 +110,27 @@ function init(db, cuentas) {
       }
 
       const inicio = Date.parse(datos.gpsIniciadoEn || "");
-      if (Number.isFinite(inicio) && muestras.some((m) => m.t < inicio - 60000))
-        throw new HttpsError(
-          "invalid-argument",
-          "La muestra es anterior al inicio del recorrido.",
-        );
+      // Cinco minutos de desfase de reloj; jamas se corrige el instante observado.
+      const rechazadas = [...rechazadasValidacion];
+      const vistas = new Set();
+      let duplicadasLote = 0;
+      const repetidas = [];
+      const muestras = [];
+      for (const muestra of candidatas) {
+        if (Number.isFinite(inicio) && muestra.t < inicio - 5 * 60000) {
+          rechazadas.push({
+            indice: muestra.indice,
+            codigo: "invalid-argument",
+            motivo: "Anterior al inicio GPS (tolerancia de cinco minutos).",
+          });
+        } else if (vistas.has(muestra.t)) {
+          repetidas.push(muestra);
+        } else {
+          vistas.add(muestra.t);
+          muestras.push(muestra);
+        }
+      }
+      muestras.sort((a, b) => a.t - b.t);
       const { viajeId } = viajeIdDe(coleccion, id, datos);
       const resumenRef = db.collection("gps_viajes").doc(viajeId);
       const refsMuestras = muestras.map((m) =>
@@ -107,12 +144,25 @@ function init(db, cuentas) {
       const resumen = resumenSnap.exists ? resumenSnap.data() : null;
       const conteoActual = resumen ? resumen.conteo || 0 : 0;
 
-      const nuevas = muestras.filter((_, i) => !existentes[i].exists);
-      if (conteoActual + nuevas.length > GPS_MAX_MUESTRAS_POR_VIAJE) {
-        throw new HttpsError(
-          "resource-exhausted",
-          "Se alcanzo el maximo de muestras GPS para este viaje.",
-        );
+      const disponibles = Math.max(
+        0,
+        GPS_MAX_MUESTRAS_POR_VIAJE - conteoActual,
+      );
+      const candidatasNuevas = muestras.filter((_, i) => !existentes[i].exists);
+      const nuevas = candidatasNuevas.slice(0, disponibles);
+      for (const muestra of candidatasNuevas.slice(disponibles)) {
+        rechazadas.push({
+          indice: muestra.indice,
+          codigo: "failed-precondition",
+          motivo: "Limite de muestras de la instancia alcanzado.",
+        });
+      }
+
+      for (const repetida of repetidas) {
+        const original = muestras.find((m) => m.t === repetida.t);
+        const rechazo = rechazadas.find((r) => r.indice === original.indice);
+        if (rechazo) rechazadas.push({ ...rechazo, indice: repetida.indice });
+        else duplicadasLote++;
       }
 
       nuevas.forEach((m) => {
@@ -153,7 +203,8 @@ function init(db, cuentas) {
 
       return {
         guardadas: nuevas.length,
-        duplicadas: muestras.length - nuevas.length,
+        duplicadas: existentes.filter((d) => d.exists).length + duplicadasLote,
+        rechazadas,
         viajeId,
       };
     });
