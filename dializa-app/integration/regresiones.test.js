@@ -276,3 +276,13 @@ test("T2: retoma concesion vencida con Firestore y Auth emulados", async () => {
   assert.equal((await auth.getUser("paciente_01")).disabled, true);
   assert.equal((await db.doc("usuarios/paciente_01").get()).data().operacionCuenta, null);
 });
+
+test("T3: baja limpia propiedad FCM y conserva tombstone real", async () => {
+  const sesionId = "sesion_baja_emulada_001";
+  await call(cuentas.registrarTokenFcm, "paciente_01", "paciente", {sesionId, token: "token_ficticio_emulador"});
+  await call(cuentas.eliminarCuenta, "admin_0001", "admin", {uid: "paciente_01"});
+  await backend("./fcm").init(db).limpiarNotificaciones("paciente_01", true);
+  assert.equal((await db.doc("usuarios_privado/paciente_01").get()).exists, false);
+  assert.equal((await db.collection("fcmTokens").where("uid", "==", "paciente_01").get()).size, 0);
+  assert.equal((await db.doc(`fcmSesiones/${sesionId}`).get()).data().revocada, true);
+});
