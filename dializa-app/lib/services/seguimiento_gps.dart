@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'cola_gps.dart';
 import 'identidad_viaje.dart';
+import 'ubicacion_repository.dart';
+import 'publicador_ubicacion.dart';
 
 /// GPS observado mientras la app esta activa. Se pausa explicitamente al
 /// minimizar; no promete seguimiento con la app cerrada o en segundo plano.
@@ -16,6 +18,14 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   SeguimientoGps(this.uid) {
     _instancias.add(this);
     WidgetsBinding.instance.addObserver(this);
+    publicador = PublicadorUbicacion((lat, lng, timestamp) async {
+      if (_cerrado || !_activo || FirebaseAuth.instance.currentUser?.uid != uid) {
+        return;
+      }
+      await UbicacionRepository()
+          .actualizarUbicacion(lat: lat, lng: lng, timestampMs: timestamp)
+          .timeout(const Duration(seconds: 8));
+    });
     cola = ColaGps(
       read: () async =>
           (await SharedPreferences.getInstance()).getString('gps_$uid'),
@@ -46,6 +56,10 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   static final Set<SeguimientoGps> _instancias = {};
   final String uid;
   late final ColaGps cola;
+  late final PublicadorUbicacion publicador;
+  int _ultimaPublicacion = 0;
+  int _revision = 0, _sensorGeneracion = 0;
+  bool _acumulando = false;
   final _db = FirebaseFirestore.instance;
   final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
   _consultas = [];
@@ -57,6 +71,15 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   String? _cierreId;
   bool _activo = true, _cerrado = false, _iniciando = false, _enviando = false;
   String estado = 'Preparando seguimiento GPS';
+  bool get puedePublicar =>
+      !_cerrado &&
+      _activo &&
+      _cierreId == null &&
+      _actual != null &&
+      autorizaUbicacion(
+        _actual!['coleccion'] as String,
+        _actual!['estado'] as String,
+      );
   void _mensaje(String value) {
     if (cola.enCuarentena > 0) {
       value +=
@@ -82,6 +105,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
               .snapshots()
               .listen(
                 (snapshot) {
+                  _revision++;
                   if (collection == 'viajes') {
                     _manual = snapshot.docs;
                   } else {
@@ -110,8 +134,15 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       'solicitudes': _solicitudes,
     }.entries) {
       for (final doc in entry.value) {
-        if (doc.data()['estado'] != 'en_viaje') continue;
+        final estado = doc.data()['estado'] as String? ?? 'asignado';
+        if (!autorizaUbicacion(entry.key, estado)) continue;
         candidatos.add({
+          'estado': estado,
+          'cambio':
+              (doc.data()['historial'] as List?)?.lastOrNull?['fecha'] ??
+              doc.data()['creadoEn'] ??
+              doc.data()['asignadoEn'] ??
+              '',
           'coleccion': entry.key,
           'id': doc.id,
           'viajeId': entry.key == 'viajes'
@@ -120,7 +151,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
         });
       }
     }
-    if (candidatos.length != 1) {
+    if (candidatos.isEmpty) {
       _cierreId = null;
       await _pararSensor();
       _actual = null;
@@ -131,14 +162,38 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       );
       return;
     }
-    final trip = candidatos.single;
+    const prioridad = {
+      'en_viaje': 4,
+      'conductor_llego': 3,
+      'conductor_en_camino': 2,
+      'asignado': 1,
+    };
+    candidatos.sort((a, b) {
+      final p = prioridad[b['estado']]!.compareTo(prioridad[a['estado']]!);
+      if (p != 0) return p;
+      final cambio = (b['cambio'] as String).compareTo(a['cambio'] as String);
+      return cambio != 0
+          ? cambio
+          : (a['id'] as String).compareTo(b['id'] as String);
+    });
+    final trip = candidatos.first;
+    final acumular =
+        trip['estado'] == 'en_viaje' &&
+        candidatos.where((d) => d['estado'] == 'en_viaje').length == 1;
     if (_cierreId == trip['viajeId']) return;
     _cierreId = null;
-    if (_actual?['viajeId'] == trip['viajeId'] && _posiciones != null) return;
+    if (_actual?['viajeId'] == trip['viajeId'] &&
+        _actual?['estado'] == trip['estado'] &&
+        _acumulando == acumular &&
+        _posiciones != null) {
+      return;
+    }
     _iniciando = true;
+    final revision = _revision;
     try {
       await _pararSensor();
       _actual = trip;
+      _acumulando = acumular;
       if (!await Geolocator.isLocationServiceEnabled()) {
         throw StateError('Activa el GPS del dispositivo.');
       }
@@ -157,6 +212,9 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
           FirebaseAuth.instance.currentUser?.uid != uid) {
         return;
       }
+      if (_revision != revision) return;
+      publicador.cambiar('${trip['viajeId']}:${trip['estado']}');
+      final generacion = _sensorGeneracion;
       _posiciones =
           Geolocator.getPositionStream(
             locationSettings: const LocationSettings(
@@ -167,7 +225,9 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
             (position) {
               if (_cerrado ||
                   !_activo ||
-                  FirebaseAuth.instance.currentUser?.uid != uid) {
+                  FirebaseAuth.instance.currentUser?.uid != uid ||
+                  _cierreId != null ||
+                  _sensorGeneracion != generacion) {
                 return;
               }
               final point = {
@@ -175,6 +235,24 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
                 'lng': position.longitude,
                 'timestampMs': position.timestamp.millisecondsSinceEpoch,
               };
+              final ahora = DateTime.now().millisecondsSinceEpoch;
+              if (ahora - _ultimaPublicacion >= 5000) {
+                _ultimaPublicacion = ahora;
+                unawaited(
+                  publicador
+                      .publicar(
+                        position.latitude,
+                        position.longitude,
+                        position.timestamp.millisecondsSinceEpoch,
+                      )
+                      .catchError((Object _) {
+                        _mensaje(
+                          'No se pudo compartir ubicacion. Reintentando con nuevas posiciones.',
+                        );
+                      }),
+                );
+              }
+              if (!acumular) return;
               // trip es la instancia capturada por esta suscripcion, nunca la nueva.
               unawaited(
                 cola
@@ -192,16 +270,23 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
               'Se interrumpio la lectura GPS. Revisa permisos y ubicacion.',
             ),
           );
-      _mensaje('GPS activo durante el viaje.');
+      _mensaje(
+        acumular
+            ? 'GPS activo durante el viaje.'
+            : 'Compartiendo ubicacion con el paciente autorizado.',
+      );
       unawaited(_enviar());
     } catch (error) {
       _mensaje(error.toString());
     } finally {
       _iniciando = false;
+      if (_revision != revision && !_cerrado) unawaited(_reconciliar());
     }
   }
 
   Future<void> _pararSensor() async {
+    _sensorGeneracion++;
+    publicador.cambiar(null);
     await _posiciones?.cancel();
     _posiciones = null;
   }

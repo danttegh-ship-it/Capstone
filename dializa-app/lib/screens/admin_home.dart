@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import 'admin_conductores_screen.dart';
+import 'historial_admin_screen.dart';
 
 /// Panel del administrador.
 ///
@@ -24,7 +25,9 @@ class AdminHome extends StatefulWidget {
 
 class _AdminHomeState extends State<AdminHome> {
   final _firestore = FirebaseFirestore.instance;
-  final _functions = FirebaseFunctions.instanceFor(region: 'southamerica-east1');
+  final _functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
 
   // ---------------------------------------------------------------------
   // Acciones: sesión y pacientes
@@ -52,7 +55,10 @@ class _AdminHomeState extends State<AdminHome> {
 
   Future<void> _modificarNombre(String uid, String nuevoNombre) async {
     final callable = _functions.httpsCallable('modificarPaciente');
-    await callable.call<Map<String, dynamic>>({'uid': uid, 'nombre': nuevoNombre});
+    await callable.call<Map<String, dynamic>>({
+      'uid': uid,
+      'nombre': nuevoNombre,
+    });
   }
 
   Future<void> _eliminarPaciente(String uid) async {
@@ -218,7 +224,10 @@ class _AdminHomeState extends State<AdminHome> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('Chofer:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Chofer:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   // Solo choferes aprobados por un admin (punto 9.4) y
@@ -259,14 +268,18 @@ class _AdminHomeState extends State<AdminHome> {
                         setDialogState(() {
                           choferSeleccionadoId = uid;
                           choferSeleccionadoNombre =
-                              (doc.data()['nombre'] as String?) ?? '(sin nombre)';
+                              (doc.data()['nombre'] as String?) ??
+                              '(sin nombre)';
                         });
                       },
                     );
                   },
                 ),
                 const SizedBox(height: 20),
-                const Text('Fecha:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Fecha:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () async {
@@ -285,7 +298,10 @@ class _AdminHomeState extends State<AdminHome> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text('Hora:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Hora:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () async {
@@ -354,11 +370,20 @@ class _AdminHomeState extends State<AdminHome> {
         title: const Text('Panel de Administrador'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Historial de traslados',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const HistorialAdminScreen()),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.local_shipping_outlined),
             tooltip: 'Gestionar conductores',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AdminConductoresScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const AdminConductoresScreen(),
+                ),
               );
             },
           ),
@@ -520,10 +545,7 @@ class _TarjetaPaciente extends StatelessWidget {
         final necesitaMovilidad = datos['necesitaMovilidad'] as bool? ?? false;
 
         if (asistira == false) {
-          return const Text(
-            'No asistirá',
-            style: TextStyle(color: Colors.red),
-          );
+          return const Text('No asistirá', style: TextStyle(color: Colors.red));
         }
 
         final comoLlegaTexto = comoLlega == 'necesita_busqueda'
@@ -551,8 +573,10 @@ class _TarjetaPaciente extends StatelessWidget {
   /// Muestra la asignación actual de chofer y hora, si existe.
   Widget _buildAsignacionViaje() {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream:
-          FirebaseFirestore.instance.collection('viajes').doc(uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('viajes')
+          .doc(uid)
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return const Text(

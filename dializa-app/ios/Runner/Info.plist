@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Dializa usa tu ubicacion mientras utilizas la app para coordinar el traslado y registrar el recorrido autorizado.</string>
 </dict>
 </plist>

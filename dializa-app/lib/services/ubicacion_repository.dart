@@ -11,30 +11,30 @@ import 'package:firebase_auth/firebase_auth.dart';
 /// usa `update()` sobre lat/lng/timestamp únicamente, igual que en
 /// daily-app.
 ///
-/// Alcance de este cambio: se deja lista la función para empujar la
-/// ubicación actual del chofer una vez (por ejemplo, al tocar un botón
-/// "compartir mi ubicación"). El seguimiento continuo en segundo plano
-/// (equivalente a UbicacionForegroundService.kt) todavía NO está
-/// implementado -- requiere un servicio en primer plano nativo que no
-/// se armó en esta pasada; ver docs/ARQUITECTURA.md.
+/// SeguimientoGps invoca update durante los estados autorizados, en primer
+/// plano. Solo modifica lat/lng/timestamp; los permisos pertenecen al servidor.
 class UbicacionRepository {
   UbicacionRepository() : _db = FirebaseDatabase.instance;
 
   final FirebaseDatabase _db;
 
-  Future<void> actualizarUbicacion({required double lat, required double lng}) async {
+  Future<void> actualizarUbicacion({
+    required double lat,
+    required double lng,
+    int? timestampMs,
+  }) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
     await _db.ref('ubicaciones/$uid').update({
       'lat': lat,
       'lng': lng,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': timestampMs ?? DateTime.now().millisecondsSinceEpoch,
     });
   }
 
   /// Stream de la ubicación de un chofer (lo usa el paciente o el admin
-  /// para seguirlo en el mapa, cuando esa pantalla exista).
+  /// para seguirlo en la pantalla UbicacionPacienteScreen).
   Stream<Map<String, dynamic>?> escucharUbicacion(String conductorUid) {
     return _db.ref('ubicaciones/$conductorUid').onValue.map((evento) {
       final valor = evento.snapshot.value;

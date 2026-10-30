@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 import 'login_screen.dart';
+import 'solicitudes_chofer_screen.dart';
 import '../services/auth_service.dart';
 import '../services/identidad_viaje.dart';
 import '../services/seguimiento_gps.dart';
@@ -84,34 +85,55 @@ class _ChoferHomeState extends State<ChoferHome> {
   /// Database una vez (no es seguimiento continuo en segundo plano, ver
   /// comentario en ubicacion_repository.dart).
   Future<void> _compartirUbicacionAhora() async {
+    if (_compartiendoUbicacion) return;
+    if (_seguimiento?.puedePublicar != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La ubicacion se comparte cuando hay un traslado autorizado.',
+          ),
+        ),
+      );
+      return;
+    }
+    final uid = FirebaseAuth.instance.currentUser?.uid;
     setState(() => _compartiendoUbicacion = true);
 
-    final resultado = await obtenerUbicacionActual();
-
-    if (resultado is UbicacionExito) {
-      await _ubicacionRepository.actualizarUbicacion(
-        lat: resultado.lat,
-        lng: resultado.lng,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Ubicación compartida.')));
+    try {
+      final resultado = await obtenerUbicacionActual();
+      if (resultado is UbicacionExito &&
+          _seguimiento?.puedePublicar == true &&
+          FirebaseAuth.instance.currentUser?.uid == uid) {
+        await _ubicacionRepository
+            .actualizarUbicacion(lat: resultado.lat, lng: resultado.lng)
+            .timeout(const Duration(seconds: 8));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ubicacion compartida.')),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo obtener la ubicacion para este traslado. Revisa permisos y GPS.',
+            ),
+          ),
+        );
       }
-    } else if (mounted) {
-      final mensaje = switch (resultado) {
-        UbicacionTimeout() => 'No se pudo obtener tu ubicación a tiempo.',
-        UbicacionSinPermiso() => 'Necesitas conceder permiso de ubicación.',
-        UbicacionServicioDesactivado() => 'Activa el GPS de tu dispositivo.',
-        UbicacionError(mensaje: final m) => 'Error: $m',
-        _ => 'No se pudo obtener tu ubicación.',
-      };
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensaje)));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo compartir la ubicacion. Revisa tu conexion.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _compartiendoUbicacion = false);
     }
-
-    if (mounted) setState(() => _compartiendoUbicacion = false);
   }
 
   @override
@@ -194,6 +216,14 @@ class _ChoferHomeState extends State<ChoferHome> {
           ),
           body: Column(
             children: [
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const SolicitudesChoferScreen(),
+                  ),
+                ),
+                child: const Text('Solicitudes de traslado'),
+              ),
               _buildTogleDisponibilidad(uidChofer),
               if (_seguimiento != null)
                 AnimatedBuilder(

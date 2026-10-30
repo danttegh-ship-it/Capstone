@@ -124,4 +124,18 @@ describe("H10 privacidad y consultas", () => {
       env.unauthenticatedContext().firestore().doc("viajes/paciente").get(),
     );
   });
+  it("T7 consultas de solicitudes propias, aceptadas e historial paginado", async () => {
+    await assertSucceeds(user("paciente").collection("solicitudes").where("pacienteId", "==", "paciente").get());
+    await assertSucceeds(user("chofer").collection("solicitudes").where("conductorId", "==", "chofer").get());
+    await env.withSecurityRulesDisabled(async ctx => {
+      const db = ctx.firestore();
+      await db.doc("historial_viajes/cerrado").update({archivadoEn: "2026-10-30T12:00:00Z"});
+      await db.doc("gps_viajes/cerrado").set({conteo: 1, primerTs: 1, ultimoTs: 1});
+    });
+    const pagina = await assertSucceeds(user("admin").collection("historial_viajes").orderBy("archivadoEn", "desc").orderBy("__name__", "desc").limit(25).get());
+    await assertSucceeds(user("admin").collection("historial_viajes").orderBy("archivadoEn", "desc").orderBy("__name__", "desc").startAfter(pagina.docs[0]).limit(25).get());
+    await assertSucceeds(user("admin").doc("gps_viajes/cerrado").get());
+    await assertFails(user("paciente").collection("historial_viajes").get());
+  });
+
 });

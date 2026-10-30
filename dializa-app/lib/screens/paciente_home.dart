@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
+import 'solicitar_traslado_screen.dart';
+import 'ubicacion_paciente_screen.dart';
 import '../services/auth_service.dart';
 import '../services/geoapify_service.dart';
 import '../config/feature_flags.dart';
@@ -130,7 +132,8 @@ class _PacienteHomeState extends State<PacienteHome> {
         _sugerenciasDireccion = resultados;
         _buscandoDireccion = false;
         if (resultados.isEmpty) {
-          _errorDireccion = 'No se encontraron direcciones. Intenta ser mas especifico.';
+          _errorDireccion =
+              'No se encontraron direcciones. Intenta ser mas especifico.';
         }
       });
     } catch (e) {
@@ -176,32 +179,34 @@ class _PacienteHomeState extends State<PacienteHome> {
     });
 
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    final requiereBusqueda = _asistira == true && _comoLlega == 'necesita_busqueda';
+    final requiereBusqueda =
+        _asistira == true && _comoLlega == 'necesita_busqueda';
 
     await FirebaseFirestore.instance
         .collection('respuestas_paciente')
         .doc(uid)
         .set({
-      'asistira': _asistira,
-      'comoLlega': _asistira == true ? _comoLlega : null,
-      'necesitaMovilidad': _necesitaMovilidad,
-      'fecha': DateTime.now().toIso8601String(),
-      // Con Geoapify activado se guardan coordenadas (direccion); con el
-      // flag apagado se guarda solo el texto que escribio el paciente
-      // (direccionTexto), sin geocodificar.
-      'direccion': requiereBusqueda &&
-              FeatureFlags.geoapifyHabilitado &&
-              _direccionSeleccionada != null
-          ? {
-              'etiqueta': _direccionSeleccionada!.etiqueta,
-              'lat': _direccionSeleccionada!.lat,
-              'lng': _direccionSeleccionada!.lng,
-            }
-          : null,
-      'direccionTexto': requiereBusqueda && !FeatureFlags.geoapifyHabilitado
-          ? _direccionTextoLibreController.text.trim()
-          : null,
-    });
+          'asistira': _asistira,
+          'comoLlega': _asistira == true ? _comoLlega : null,
+          'necesitaMovilidad': _necesitaMovilidad,
+          'fecha': DateTime.now().toIso8601String(),
+          // Con Geoapify activado se guardan coordenadas (direccion); con el
+          // flag apagado se guarda solo el texto que escribio el paciente
+          // (direccionTexto), sin geocodificar.
+          'direccion':
+              requiereBusqueda &&
+                  FeatureFlags.geoapifyHabilitado &&
+                  _direccionSeleccionada != null
+              ? {
+                  'etiqueta': _direccionSeleccionada!.etiqueta,
+                  'lat': _direccionSeleccionada!.lat,
+                  'lng': _direccionSeleccionada!.lng,
+                }
+              : null,
+          'direccionTexto': requiereBusqueda && !FeatureFlags.geoapifyHabilitado
+              ? _direccionTextoLibreController.text.trim()
+              : null,
+        });
 
     setState(() {
       _guardando = false;
@@ -243,7 +248,10 @@ class _PacienteHomeState extends State<PacienteHome> {
     if (_asistira == true && _comoLlega == 'necesita_busqueda') {
       if (FeatureFlags.geoapifyHabilitado) {
         if (_direccionSeleccionada == null) {
-          setState(() => _mensaje = 'Por favor busca y selecciona tu dirección de retiro.');
+          setState(
+            () => _mensaje =
+                'Por favor busca y selecciona tu dirección de retiro.',
+          );
           return false;
         }
       } else if (_direccionTextoLibreController.text.trim().isEmpty) {
@@ -274,6 +282,22 @@ class _PacienteHomeState extends State<PacienteHome> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SolicitarTrasladoScreen(),
+                ),
+              ),
+              child: const Text('Solicitar traslado'),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const UbicacionPacienteScreen(),
+                ),
+              ),
+              child: const Text('Ver ubicacion del chofer'),
+            ),
             _buildAvisoRespuestaPrevia(),
             _buildPreguntaAsistencia(),
             if (_asistira == true) _buildPreguntaComoLlega(),
@@ -433,7 +457,10 @@ class _PacienteHomeState extends State<PacienteHome> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.search),
               ),
@@ -442,7 +469,10 @@ class _PacienteHomeState extends State<PacienteHome> {
           if (_errorDireccion != null)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text(_errorDireccion!, style: const TextStyle(color: Colors.red)),
+              child: Text(
+                _errorDireccion!,
+                style: const TextStyle(color: Colors.red),
+              ),
             ),
           if (_sugerenciasDireccion.isNotEmpty)
             Container(
