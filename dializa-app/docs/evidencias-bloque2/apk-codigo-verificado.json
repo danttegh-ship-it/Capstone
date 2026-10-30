@@ -1,0 +1,9 @@
+{
+  "sha": "519299da66a8bcb8d0ad6e6efad75345a0991157",
+  "apk": "app-debug.apk",
+  "bytes": 166829789,
+  "comando": "flutter build apk --debug --no-pub",
+  "sha256": "20546d1aaef0a06df1504abc78af8fd60e771ac3cfb74bd5491928c7669eb94c",
+  "utc": "2026-10-30T10:19:43.4784623Z",
+  "exit": 0
+}
