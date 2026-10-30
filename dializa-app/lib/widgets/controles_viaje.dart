@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// Acciones permitidas por el mismo contrato del servidor.
-class ControlesViaje extends StatelessWidget {
+class ControlesViaje extends StatefulWidget {
   const ControlesViaje({
     super.key,
     required this.estado,
@@ -11,10 +12,28 @@ class ControlesViaje extends StatelessWidget {
   });
   final String estado;
   final bool enviando;
-  final void Function(String) onAvanzar;
-  final VoidCallback onCancelar;
+  final FutureOr<void> Function(String) onAvanzar;
+  final FutureOr<void> Function() onCancelar;
+  @override
+  State<ControlesViaje> createState() => _ControlesViajeState();
+}
+
+class _ControlesViajeState extends State<ControlesViaje> {
+  bool _local = false;
+  Future<void> _accion(FutureOr<void> Function() accion) async {
+    if (_local || widget.enviando) return;
+    setState(() => _local = true);
+    try {
+      await accion();
+    } finally {
+      if (mounted) setState(() => _local = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final estado = widget.estado;
+    final enviando = widget.enviando || _local;
     const siguientes = {
       'asignado': 'conductor_en_camino',
       'conductor_en_camino': 'conductor_llego',
@@ -38,7 +57,9 @@ class ControlesViaje extends StatelessWidget {
         if (siguiente != null)
           Expanded(
             child: ElevatedButton(
-              onPressed: enviando ? null : () => onAvanzar(siguiente),
+              onPressed: enviando
+                  ? null
+                  : () => _accion(() => widget.onAvanzar(siguiente)),
               child: Text(etiquetas[estado]!),
             ),
           ),
@@ -49,7 +70,7 @@ class ControlesViaje extends StatelessWidget {
         ].contains(estado)) ...[
           const SizedBox(width: 8),
           OutlinedButton(
-            onPressed: enviando ? null : onCancelar,
+            onPressed: enviando ? null : () => _accion(widget.onCancelar),
             style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Cancelar'),
           ),

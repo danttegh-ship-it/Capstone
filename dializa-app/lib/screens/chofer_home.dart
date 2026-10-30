@@ -9,6 +9,7 @@ import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/identidad_viaje.dart';
 import '../services/seguimiento_gps.dart';
+import '../services/errores_viaje.dart';
 import 'registro_conductor_screen.dart';
 import '../config/feature_flags.dart';
 import '../services/geoapify_service.dart';
@@ -647,6 +648,7 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
     String viajeId,
     String estadoEsperado,
   ) async {
+    if (_enviando) return;
     setState(() => _enviando = true);
     try {
       if (nuevoEstado == 'finalizado') {
@@ -665,7 +667,7 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $e')));
+        ).showSnackBar(SnackBar(content: Text(mensajeErrorViaje(e))));
         unawaited(SeguimientoGps.reanudarTodos().catchError((Object _) {}));
       }
     } finally {
@@ -677,6 +679,7 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
     String viajeId,
     String estadoEsperado,
   ) async {
+    if (_enviando) return;
     setState(() => _enviando = true);
     try {
       await _functions
@@ -691,7 +694,7 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('No se pudo cancelar: $e')));
+        ).showSnackBar(SnackBar(content: Text(mensajeErrorViaje(e))));
       }
     } finally {
       if (mounted) setState(() => _enviando = false);
