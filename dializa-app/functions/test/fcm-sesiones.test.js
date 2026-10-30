@@ -73,3 +73,60 @@ test("H05: sesion sustituida no recupera un token transferido a otra cuenta", as
     a.token,
   );
 });
+
+for (const eliminar of [false, true]) {
+  test(`T3: ${eliminar ? "baja" : "desactivacion"} limpia notificaciones y es idempotente`, async () => {
+    const e = await env();
+    const sesion = "sesion_baja_usuario_01";
+    await call(e.cuentas.registrarTokenFcm, UID.paciente, {
+      sesionId: sesion,
+      token: "token-baja",
+    });
+    await e.db
+      .doc("fcmSesiones/otra_sesion_historica")
+      .set({ uid: UID.paciente, revocada: false });
+    await call(e.cuentas.registrarTokenFcm, UID.paciente2, {
+      sesionId: "sesion_otro_usuario_01",
+      token: "token-otro",
+    });
+    const request = peticion(UID.admin, "admin", {
+      uid: UID.paciente,
+      activo: false,
+    });
+    await (
+      eliminar ? e.cuentas.eliminarCuenta : e.cuentas.activarDesactivarCuenta
+    ).run(request);
+    const helper = require("../fcm").init(e.db);
+    await helper.limpiarNotificaciones(UID.paciente, eliminar);
+    const propios = await e.db
+      .collection("fcmTokens")
+      .where("uid", "==", UID.paciente)
+      .get();
+    assert.equal(propios.size, 0);
+    const sesiones = await e.db
+      .collection("fcmSesiones")
+      .where("uid", "==", UID.paciente)
+      .get();
+    assert.ok(sesiones.docs.every((d) => d.data().revocada === true));
+    const privado = await e.db.doc(`usuarios_privado/${UID.paciente}`).get();
+    if (eliminar) assert.equal(privado.exists, false);
+    else assert.equal(privado.data().fcmToken, null);
+    assert.equal(
+      (await e.db.doc(`usuarios_privado/${UID.paciente2}`).get()).data()
+        .fcmToken,
+      "token-otro",
+    );
+    if (!eliminar) {
+      await e.cuentas.activarDesactivarCuenta.run(
+        peticion(UID.admin, "admin", { uid: UID.paciente, activo: true }),
+      );
+      await assert.rejects(
+        call(e.cuentas.registrarTokenFcm, UID.paciente, {
+          sesionId: sesion,
+          token: "token-baja",
+        }),
+        { code: "failed-precondition" },
+      );
+    }
+  });
+}

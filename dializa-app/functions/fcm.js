@@ -138,6 +138,40 @@ function init(db) {
     });
     return { ok: true };
   });
-  return { registrarTokenFcm, eliminarTokenFcm };
+  // Se invoca con el perfil bloqueado por la operacion de cuenta. Las
+  // transacciones vuelven a leer el propietario: una transferencia concurrente
+  // no puede borrar el token que ahora pertenece a otro usuario.
+  async function limpiarNotificaciones(uid, eliminar = false) {
+    const [tokens, sesiones] = await Promise.all([
+      db.collection("fcmTokens").where("uid", "==", uid).get(),
+      db.collection("fcmSesiones").where("uid", "==", uid).get(),
+    ]);
+    const refs = [...tokens.docs, ...sesiones.docs].map((d) => d.ref);
+    for (let i = 0; i < refs.length; i += 200) {
+      await db.runTransaction(async (tx) => {
+        const docs = await Promise.all(
+          refs.slice(i, i + 200).map((ref) => tx.get(ref)),
+        );
+        for (const doc of docs) {
+          if (!doc.exists || doc.data().uid !== uid) continue;
+          if (doc.ref.path.startsWith("fcmTokens/")) tx.delete(doc.ref);
+          else tx.set(doc.ref, { ...doc.data(), revocada: true });
+        }
+      });
+    }
+    const privado = db.collection("usuarios_privado").doc(uid);
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(privado);
+      if (eliminar) tx.delete(privado);
+      else if (snap.exists)
+        tx.set(privado, {
+          ...snap.data(),
+          fcmToken: null,
+          tokenKey: null,
+          sesionId: null,
+        });
+    });
+  }
+  return { registrarTokenFcm, eliminarTokenFcm, limpiarNotificaciones };
 }
 module.exports = { init, clave };

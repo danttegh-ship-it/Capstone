@@ -292,6 +292,7 @@ function init(db, { autorizacion }, authInyectado = null) {
     );
     try {
       await autorizacion.sincronizarCuenta(objetivoUid);
+      if (!activo) await limpiarNotificaciones(objetivoUid);
       const authActualizado = await operaciones.aplicarAuth(
         objetivoUid,
         activo,
@@ -400,6 +401,7 @@ function init(db, { autorizacion }, authInyectado = null) {
           if (conductor) choferes.add(conductor);
         }
       }
+      await limpiarNotificaciones(objetivoUid, true);
       const authActualizado = await operaciones.aplicarAuth(
         objetivoUid,
         false,
@@ -459,7 +461,8 @@ function init(db, { autorizacion }, authInyectado = null) {
   // registrarTokenFcm: guarda/actualiza el token de notificaciones push
   // del usuario autenticado (puntos 9.5, 14.2).
   // ---------------------------------------------------------------------
-  const { registrarTokenFcm, eliminarTokenFcm } = require("./fcm").init(db);
+  const { registrarTokenFcm, eliminarTokenFcm, limpiarNotificaciones } =
+    require("./fcm").init(db);
 
   // ---------------------------------------------------------------------
   // actualizarDisponibilidad: el chofer activa/desactiva si esta
