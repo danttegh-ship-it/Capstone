@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import 'admin_conductores_screen.dart';
+import 'admin_historial_screen.dart';
 
 /// Panel del administrador.
 ///
@@ -359,6 +360,15 @@ class _AdminHomeState extends State<AdminHome> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const AdminConductoresScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Historial de viajes',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AdminHistorialScreen()),
               );
             },
           ),

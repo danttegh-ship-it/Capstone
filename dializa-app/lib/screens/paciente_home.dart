@@ -5,6 +5,7 @@ import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/geoapify_service.dart';
 import '../config/feature_flags.dart';
+import '../widgets/seccion_traslado_paciente.dart';
 
 /// Pantalla principal del paciente.
 ///
@@ -274,6 +275,13 @@ class _PacienteHomeState extends State<PacienteHome> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Pedir traslado y ver al chofer en el mapa en tiempo real.
+            SeccionTrasladoPaciente(
+              direccionInicial: _direccionTextoLibreController.text.trim().isNotEmpty
+                  ? _direccionTextoLibreController.text.trim()
+                  : _direccionSeleccionada?.etiqueta,
+              necesitaMovilidad: _necesitaMovilidad,
+            ),
             _buildAvisoRespuestaPrevia(),
             _buildPreguntaAsistencia(),
             if (_asistira == true) _buildPreguntaComoLlega(),
