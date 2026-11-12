@@ -163,41 +163,108 @@ class _UbicacionChoferState extends State<UbicacionChofer> {
             Text(
               'Ultima posicion observada: ${DateTime.fromMillisecondsSinceEpoch(timestamp.toInt()).toLocal()}',
             ),
-            if (widget.mostrarMapa)
-              SizedBox(
-                height: 320,
-                child: FlutterMap(
-                  key: ValueKey('$lat:$lng'),
-                  options: MapOptions(initialCenter: punto, initialZoom: 15),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.dializa_app',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: punto,
-                          child: const Icon(
-                            Icons.local_taxi,
-                            color: Colors.purple,
-                            size: 34,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const RichAttributionWidget(
-                      attributions: [
-                        TextSourceAttribution('OpenStreetMap contributors'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            if (widget.mostrarMapa) _MapaPosicionChofer(punto: punto),
           ],
         ),
       );
     },
+  );
+}
+
+/// El mapa solo existe mientras la lectura supera los controles de acceso
+/// y vigencia de UbicacionChofer.
+class _MapaPosicionChofer extends StatefulWidget {
+  const _MapaPosicionChofer({required this.punto});
+
+  final LatLng punto;
+
+  @override
+  State<_MapaPosicionChofer> createState() => _MapaPosicionChoferState();
+}
+
+class _MapaPosicionChoferState extends State<_MapaPosicionChofer> {
+  final _controlador = MapController();
+  bool _listo = false;
+  bool _seguir = true;
+
+  @override
+  void didUpdateWidget(covariant _MapaPosicionChofer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.punto != widget.punto && _seguir) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _seguir) _centrar();
+      });
+    }
+  }
+
+  void _centrar() {
+    if (_listo) _controlador.move(widget.punto, _controlador.camera.zoom);
+  }
+
+  @override
+  void dispose() {
+    _controlador.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 320,
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        FlutterMap(
+          mapController: _controlador,
+          options: MapOptions(
+            initialCenter: widget.punto,
+            initialZoom: 15,
+            onMapReady: () {
+              _listo = true;
+              _centrar();
+            },
+            onPositionChanged: (_, gesto) {
+              if (gesto && _seguir) setState(() => _seguir = false);
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.dializa_app',
+            ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: widget.punto,
+                  child: const Icon(
+                    Icons.local_taxi,
+                    color: Colors.purple,
+                    size: 34,
+                  ),
+                ),
+              ],
+            ),
+            const RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution('OpenStreetMap contributors'),
+              ],
+            ),
+          ],
+        ),
+        if (!_seguir)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: FloatingActionButton.small(
+              heroTag: null,
+              tooltip: 'Centrar en el chofer',
+              onPressed: () {
+                setState(() => _seguir = true);
+                _centrar();
+              },
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+      ],
+    ),
   );
 }
