@@ -54,6 +54,11 @@ class _HistorialAdminState extends State<HistorialAdminScreen> {
                         ),
                         Text('Archivado: ${d['archivadoEn'] ?? ''}'),
                         Text('Instancia: ${doc.id}'),
+                        TextButton.icon(
+                          onPressed: () => mostrarDetalleHistorial(context, d),
+                          icon: const Icon(Icons.history),
+                          label: const Text('Ver detalle'),
+                        ),
                         FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                           future: FirebaseFirestore.instance
                               .collection('gps_viajes')
@@ -113,4 +118,83 @@ class ResumenGps extends StatelessWidget {
       'GPS observado: ${datos!['conteo'] ?? 0} muestras.\nDesde ${fecha(datos!['primerTs'])} hasta ${fecha(datos!['ultimoTs'])}.',
     );
   }
+}
+
+/// Ficha del viaje archivado. Usa los datos de la página ya autorizada.
+Future<void> mostrarDetalleHistorial(
+  BuildContext context,
+  Map<String, dynamic> datos,
+) {
+  final historial = datos['historial'];
+  final origen = datos['origen'];
+  final destino = datos['destino'];
+  final necesidades = datos['necesidades'];
+  const cierres = {
+    'finalizado': 'Finalizado',
+    'cancelado': 'Cancelado',
+    'reasignado': 'Reasignado a otro chofer',
+    'cuenta_eliminada': 'Cuenta eliminada',
+  };
+  const estados = {
+    'solicitado': 'Solicitado',
+    'asignado': 'Asignado',
+    'conductor_en_camino': 'Chofer en camino',
+    'conductor_llego': 'Chofer llegó',
+    'en_viaje': 'En viaje',
+    'finalizado': 'Finalizado',
+    'cancelado': 'Cancelado',
+  };
+  final cierre = datos['cierre'] ?? datos['estadoFinal'];
+  final entradas = historial is List ? historial.whereType<Map>().toList() : [];
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) => DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      builder: (context, scrollController) => ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(
+            datos['pacienteNombre']?.toString() ?? 'Paciente',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          Text('Chofer: ${datos['conductorNombre'] ?? 'Sin nombre archivado'}'),
+          Text('Resultado: ${cierres[cierre] ?? cierre ?? 'Sin resultado'}'),
+          if (datos['fecha'] != null)
+            Text('Fecha del viaje: ${datos['fecha']} ${datos['hora'] ?? ''}'),
+          Text('Archivado: ${datos['archivadoEn'] ?? 'Sin fecha'}'),
+          if (origen is Map && origen['direccion'] != null)
+            Text('Retiro: ${origen['direccion']}'),
+          if (destino is Map && destino['direccion'] != null)
+            Text('Destino: ${destino['direccion']}'),
+          if (necesidades is Map && necesidades['sillaRuedas'] == true)
+            const Text('Necesita ayuda de movilidad'),
+          if (datos['notas'] != null) Text('Notas: ${datos['notas']}'),
+          const SizedBox(height: 16),
+          Text(
+            'Recorrido de estados',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          if (entradas.isEmpty)
+            const Text('Sin cambios de estado registrados.'),
+          for (final entrada in entradas)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.circle, size: 12),
+              title: Text(
+                entrada['estado'].toString().startsWith('rechazado:')
+                    ? 'Chofer devolvió la solicitud'
+                    : estados[entrada['estado']] ??
+                          entrada['estado']?.toString() ??
+                          'Sin estado',
+              ),
+              subtitle: Text(entrada['fecha']?.toString() ?? 'Sin fecha'),
+            ),
+        ],
+      ),
+    ),
+  );
 }
