@@ -1,9 +1,9 @@
+import '../services/operaciones_app.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 import 'login_screen.dart';
 import 'solicitudes_chofer_screen.dart';
@@ -14,8 +14,6 @@ import '../services/errores_viaje.dart';
 import 'registro_conductor_screen.dart';
 import '../config/feature_flags.dart';
 import '../services/geoapify_service.dart';
-import '../services/ubicacion_actual.dart';
-import '../services/ubicacion_repository.dart';
 import '../widgets/mapa_ruta.dart';
 import '../widgets/controles_viaje.dart';
 
@@ -47,9 +45,6 @@ class _ChoferHomeState extends State<ChoferHome> {
   }
 
   final _firestore = FirebaseFirestore.instance;
-  final _functions = FirebaseFunctions.instanceFor(
-    region: 'southamerica-east1',
-  );
 
   Future<void> _cerrarSesion() async {
     await AuthService().cerrarSesion();
@@ -62,77 +57,17 @@ class _ChoferHomeState extends State<ChoferHome> {
     );
   }
 
-  final _ubicacionRepository = UbicacionRepository();
-  bool _compartiendoUbicacion = false;
-
   Future<void> _cambiarDisponibilidad(bool disponible) async {
     try {
-      await _functions
-          .httpsCallable('actualizarDisponibilidad')
-          .call<Map<String, dynamic>>({'disponible': disponible});
+      await OperacionesApp.ejecutar('actualizarDisponibilidad', {
+        'disponible': disponible,
+      });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se pudo actualizar tu disponibilidad: $e'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(mensajeErrorViaje(e))));
       }
-    }
-  }
-
-  /// Punto 8.7/12.8: empuja la ubicación actual del chofer a Realtime
-  /// Database una vez (no es seguimiento continuo en segundo plano, ver
-  /// comentario en ubicacion_repository.dart).
-  Future<void> _compartirUbicacionAhora() async {
-    if (_compartiendoUbicacion) return;
-    if (_seguimiento?.puedePublicar != true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'La ubicacion se comparte cuando hay un traslado autorizado.',
-          ),
-        ),
-      );
-      return;
-    }
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    setState(() => _compartiendoUbicacion = true);
-
-    try {
-      final resultado = await obtenerUbicacionActual();
-      if (resultado is UbicacionExito &&
-          _seguimiento?.puedePublicar == true &&
-          FirebaseAuth.instance.currentUser?.uid == uid) {
-        await _ubicacionRepository
-            .actualizarUbicacion(lat: resultado.lat, lng: resultado.lng)
-            .timeout(const Duration(seconds: 8));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ubicacion compartida.')),
-          );
-        }
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No se pudo obtener la ubicacion para este traslado. Revisa permisos y GPS.',
-            ),
-          ),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No se pudo compartir la ubicacion. Revisa tu conexion.',
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _compartiendoUbicacion = false);
     }
   }
 
@@ -260,25 +195,18 @@ class _ChoferHomeState extends State<ChoferHome> {
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
-                  disponible ? 'Disponible para viajes' : 'No disponible',
+                  disponible
+                      ? 'Disponible para aceptar solicitudes'
+                      : 'No disponible para nuevas solicitudes',
                 ),
                 value: disponible,
                 onChanged: _cambiarDisponibilidad,
               ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _compartiendoUbicacion
-                      ? null
-                      : _compartirUbicacionAhora,
-                  icon: _compartiendoUbicacion
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.my_location),
-                  label: const Text('Compartir mi ubicación ahora'),
+              const ListTile(
+                leading: Icon(Icons.my_location),
+                title: Text('Ubicacion automatica durante la sesion'),
+                subtitle: Text(
+                  'La disponibilidad solo cambia si recibes solicitudes.',
                 ),
               ),
             ],
@@ -389,9 +317,6 @@ class _TarjetaViaje extends StatefulWidget {
 class _TarjetaViajeState extends State<_TarjetaViaje> {
   bool _enviando = false;
   final _geoapifyService = GeoapifyService();
-  final _functions = FirebaseFunctions.instanceFor(
-    region: 'southamerica-east1',
-  );
   final _firestore = FirebaseFirestore.instance;
 
   bool _calculandoRuta = false;
@@ -684,15 +609,13 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
       if (nuevoEstado == 'finalizado') {
         await SeguimientoGps.prepararCierre(viajeId);
       }
-      await _functions
-          .httpsCallable('actualizarEstadoViaje')
-          .call<Map<String, dynamic>>({
-            'coleccion': 'viajes',
-            'id': widget.pacienteId,
-            'nuevoEstado': nuevoEstado,
-            'viajeId': viajeId,
-            'estadoEsperado': estadoEsperado,
-          });
+      await OperacionesApp.ejecutar('actualizarEstadoViaje', {
+        'coleccion': 'viajes',
+        'id': widget.pacienteId,
+        'nuevoEstado': nuevoEstado,
+        'viajeId': viajeId,
+        'estadoEsperado': estadoEsperado,
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -712,14 +635,12 @@ class _TarjetaViajeState extends State<_TarjetaViaje> {
     if (_enviando) return;
     setState(() => _enviando = true);
     try {
-      await _functions
-          .httpsCallable('cancelarAsignacionConductor')
-          .call<Map<String, dynamic>>({
-            'viajeId': viajeId,
-            'estadoEsperado': estadoEsperado,
-            'coleccion': 'viajes',
-            'id': widget.pacienteId,
-          });
+      await OperacionesApp.ejecutar('cancelarAsignacionConductor', {
+        'viajeId': viajeId,
+        'estadoEsperado': estadoEsperado,
+        'coleccion': 'viajes',
+        'id': widget.pacienteId,
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

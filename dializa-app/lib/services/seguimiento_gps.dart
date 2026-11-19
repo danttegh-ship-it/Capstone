@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,6 +12,7 @@ import 'cola_gps.dart';
 import 'identidad_viaje.dart';
 import 'ubicacion_repository.dart';
 import 'publicador_ubicacion.dart';
+import 'operaciones_app.dart';
 
 /// GPS observado mientras la app esta activa. Se pausa explicitamente al
 /// minimizar; no promete seguimiento con la app cerrada o en segundo plano.
@@ -19,11 +21,18 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
     _instancias.add(this);
     WidgetsBinding.instance.addObserver(this);
     publicador = PublicadorUbicacion((lat, lng, timestamp) async {
-      if (_cerrado || !_activo || FirebaseAuth.instance.currentUser?.uid != uid) {
+      if (_cerrado ||
+          !_activo ||
+          FirebaseAuth.instance.currentUser?.uid != uid) {
         return;
       }
       await UbicacionRepository()
-          .actualizarUbicacion(lat: lat, lng: lng, timestampMs: timestamp)
+          .actualizarUbicacion(
+            lat: lat,
+            lng: lng,
+            timestampMs: timestamp,
+            viaje: _actual,
+          )
           .timeout(const Duration(seconds: 8));
     });
     cola = ColaGps(
@@ -42,12 +51,17 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
           throw StateError('La sesion del chofer cambio.');
         }
         try {
+          if (OperacionesApp.usaSpark) {
+            return await OperacionesApp.ejecutar('registrarMuestrasGps', data);
+          }
           final result =
               await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
                   .httpsCallable('registrarMuestrasGps')
                   .call<Map<String, dynamic>>(data);
           return result.data;
         } on FirebaseFunctionsException catch (error) {
+          throw FalloGps(error.code);
+        } on FirebaseException catch (error) {
           throw FalloGps(error.code);
         }
       },
@@ -64,6 +78,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
   _consultas = [];
   StreamSubscription<Position>? _posiciones;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _perfil;
   Timer? _timer;
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _manual = [],
       _solicitudes = [];
@@ -94,6 +109,11 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> iniciar() async {
     try {
+      _perfil = _db.collection('usuarios').doc(uid).snapshots().listen((doc) {
+        if (doc.data()?['activo'] != true || doc.data()?['aprobado'] != true) {
+          unawaited(cerrar());
+        }
+      });
       await cola.load();
       if (_cerrado) return;
       for (final collection in ['viajes', 'solicitudes']) {
@@ -151,6 +171,15 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
         });
       }
     }
+    if (candidatos.isEmpty && OperacionesApp.usaSpark) {
+      candidatos.add({
+        'estado': 'sesion',
+        'cambio': '',
+        'coleccion': 'sesion',
+        'id': uid,
+        'viajeId': 'sesion-$uid',
+      });
+    }
     if (candidatos.isEmpty) {
       _cierreId = null;
       await _pararSensor();
@@ -163,6 +192,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     const prioridad = {
+      'sesion': 0,
       'en_viaje': 4,
       'conductor_llego': 3,
       'conductor_en_camino': 2,
@@ -217,10 +247,26 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       final generacion = _sensorGeneracion;
       _posiciones =
           Geolocator.getPositionStream(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: 5,
-            ),
+            locationSettings:
+                OperacionesApp.usaSpark &&
+                    defaultTargetPlatform == TargetPlatform.android
+                ? AndroidSettings(
+                    accuracy: LocationAccuracy.high,
+                    distanceFilter: 0,
+                    intervalDuration: const Duration(seconds: 15),
+                    foregroundNotificationConfig:
+                        const ForegroundNotificationConfig(
+                          notificationTitle: 'Dializa: ubicacion activa',
+                          notificationText:
+                              'Compartiendo durante tu sesion de conductor.',
+                          enableWakeLock: true,
+                          setOngoing: true,
+                        ),
+                  )
+                : const LocationSettings(
+                    accuracy: LocationAccuracy.high,
+                    distanceFilter: 5,
+                  ),
           ).listen(
             (position) {
               if (_cerrado ||
@@ -236,7 +282,8 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
                 'timestampMs': position.timestamp.millisecondsSinceEpoch,
               };
               final ahora = DateTime.now().millisecondsSinceEpoch;
-              if (ahora - _ultimaPublicacion >= 5000) {
+              if (ahora - _ultimaPublicacion >=
+                  (OperacionesApp.usaSpark ? 15000 : 5000)) {
                 _ultimaPublicacion = ahora;
                 unawaited(
                   publicador
@@ -277,7 +324,9 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
       );
       unawaited(_enviar());
     } catch (error) {
-      _mensaje(error.toString());
+      _mensaje(
+        'No se pudo iniciar el GPS. Activa la ubicacion y concede el permiso en Ajustes.',
+      );
     } finally {
       _iniciando = false;
       if (_revision != revision && !_cerrado) unawaited(_reconciliar());
@@ -362,6 +411,13 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (OperacionesApp.usaSpark &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        state != AppLifecycleState.detached) {
+      _activo = true;
+      if (state == AppLifecycleState.resumed) unawaited(_reconciliar());
+      return;
+    }
     _activo = state == AppLifecycleState.resumed;
     if (_activo) {
       unawaited(_reconciliar());
@@ -376,6 +432,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _cerrar() async {
     _cerrado = true;
     _timer?.cancel();
+    await _perfil?.cancel();
     for (final sub in _consultas) {
       await sub.cancel();
     }

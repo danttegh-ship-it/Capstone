@@ -1,5 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'operaciones_app.dart';
 
 /// Puerto de daily-app/android/.../RealtimeLocationRepository.kt: lee y
 /// escribe `ubicaciones/{uid}` en Realtime Database.
@@ -22,9 +24,38 @@ class UbicacionRepository {
     required double lat,
     required double lng,
     int? timestampMs,
+    Map<String, dynamic>? viaje,
   }) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+
+    if (OperacionesApp.usaSpark) {
+      Map<String, dynamic>? datos;
+      final coleccion = viaje?['coleccion'];
+      if (coleccion == 'viajes' || coleccion == 'solicitudes') {
+        datos =
+            (await FirebaseFirestore.instance
+                    .collection(coleccion)
+                    .doc(viaje!['id'])
+                    .get())
+                .data();
+      }
+      await FirebaseFirestore.instance.collection('ubicaciones').doc(uid).set({
+        'lat': lat,
+        'lng': lng,
+        'timestamp': timestampMs ?? DateTime.now().millisecondsSinceEpoch,
+        'actualizadoEn': FieldValue.serverTimestamp(),
+        'coleccion': datos == null ? 'sesion' : coleccion,
+        'id': datos == null ? uid : viaje!['id'],
+        'pacienteAutorizado': datos == null
+            ? null
+            : coleccion == 'viajes'
+            ? viaje!['id']
+            : datos['pacienteId'],
+        'viajeAutorizado': datos == null ? null : viaje!['viajeId'],
+      });
+      return;
+    }
 
     await _db.ref('ubicaciones/$uid').update({
       'lat': lat,
@@ -36,6 +67,25 @@ class UbicacionRepository {
   /// Stream de la ubicación de un chofer (lo usa el paciente o el admin
   /// para seguirlo en la pantalla UbicacionPacienteScreen).
   Stream<Map<String, dynamic>?> escucharUbicacion(String conductorUid) {
+    if (OperacionesApp.usaSpark) {
+      return FirebaseFirestore.instance
+          .collection('ubicaciones')
+          .doc(conductorUid)
+          .snapshots()
+          .map((doc) {
+            final d = doc.data();
+            if (d == null) return null;
+            return {
+              ...d,
+              'autorizacionValidaHasta':
+                  (d['actualizadoEn'] as Timestamp?)?.millisecondsSinceEpoch !=
+                      null
+                  ? (d['actualizadoEn'] as Timestamp).millisecondsSinceEpoch +
+                        120000
+                  : 0,
+            };
+          });
+    }
     return _db.ref('ubicaciones/$conductorUid').onValue.map((evento) {
       final valor = evento.snapshot.value;
       if (valor is Map) {
