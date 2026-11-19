@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function autenticado() { return request.auth != null; }
+  function perfilDe(uid) { return get(/databases/$(database)/documents/usuarios/$(uid)).data; }
+  function perfil() { return perfilDe(request.auth.uid); }
+  function activo() { return autenticado() && perfil().get('activo',false) == true && perfil().get('operacionCuenta',null) == null && perfil().get('bajaEnCurso',false) == false; }
+  function esAdmin() { return activo() && perfil().rol == 'admin'; }
+  function esConductor() { return activo() && perfil().rol == 'chofer' && perfil().get('aprobado',false) == true; }
+  function esDueno(uid) { return activo() && request.auth.uid == uid; }
+  function choferValido(uid) { return perfilDe(uid).rol == 'chofer' && perfilDe(uid).activo == true && perfilDe(uid).aprobado == true; }
+  function pacienteValido(uid) { return perfilDe(uid).rol == 'paciente' && perfilDe(uid).activo == true; }
+  function conductorDelPaciente(uid) {
+   let viaje = get(/databases/$(database)/documents/viajes/$(uid)).data;
+   return esConductor() && viaje.choferId == request.auth.uid && viaje.estado in ['asignado','conductor_en_camino','conductor_llego','en_viaje'];
+  }
+  function texto(v,n) { return v is string && v.size() > 0 && v.size() <= n; }
+  function punto(p) { return p is map && p.keys().hasOnly(['lat','lng','direccion']) && p.lat is number && p.lng is number && p.lat >= -90 && p.lat <= 90 && p.lng >= -180 && p.lng <= 180 && texto(p.direccion,200); }
+  function transicion(a,b) { return (a == 'asignado' && b in ['conductor_en_camino','cancelado']) || (a == 'conductor_en_camino' && b in ['conductor_llego','cancelado']) || (a == 'conductor_llego' && b in ['en_viaje','cancelado']) || (a == 'en_viaje' && b == 'finalizado'); }
+  function historialValido() {
+   let h = request.resource.data.historial;
+   return h is list && h.size() == resource.data.get('historial',[]).size()+1 &&
+    h == resource.data.get('historial',[]).concat([h[h.size()-1]]) &&
+    h[h.size()-1].keys().hasOnly(['estado','fecha','actorUid']) &&
+    h[h.size()-1].estado == request.resource.data.estado && h[h.size()-1].actorUid == request.auth.uid && h[h.size()-1].fecha is string;
+  }
+  function cierreArchivado(instancia) { return !(request.resource.data.estado in ['cancelado','finalizado']) || getAfter(/databases/$(database)/documents/historial_viajes/$(instancia)).data.estadoFinal == request.resource.data.estado; }
+  function cambiaViaje(conductor,instancia) { return esConductor() && resource.data[conductor] == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','historial']) && transicion(resource.data.estado,request.resource.data.estado) && historialValido() && cierreArchivado(instancia); }
+  match /usuarios/{uid} {
+   allow get: if (autenticado() && request.auth.uid == uid) || esAdmin() || conductorDelPaciente(uid);
+   allow list: if esAdmin();
+   allow create: if esAdmin() && request.resource.data.keys().hasOnly(['nombre','rol','activo']) && request.resource.data.rol == 'paciente' && request.resource.data.activo == true && texto(request.resource.data.nombre,120);
+   allow update: if esAdmin() && resource.data.rol in ['paciente','chofer'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre','activo','aprobado','eliminado']) && texto(request.resource.data.nombre,120) && request.resource.data.activo is bool && (resource.data.rol == 'chofer' || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['aprobado']));
+  }
+  match /usuarios_privado/{uid} { allow read,write: if false; }
+  match /fcmTokens/{uid} { allow read,write: if false; }
+  match /fcmSesiones/{uid} { allow read,write: if false; }
+  match /choferes_privado/{uid} {
+   allow read: if esDueno(uid) || esAdmin();
+   allow create: if esConductor() && uid == request.auth.uid && request.resource.data.keys().hasOnly(['disponible']) && request.resource.data.disponible is bool;
+   allow update: if esConductor() && uid == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['disponible']) && request.resource.data.disponible is bool;
+  }
+  match /viajes/{pacienteId} {
+   allow read: if esAdmin() || esDueno(pacienteId) || (esConductor() && resource.data.choferId == request.auth.uid);
+   allow create,update: if esAdmin() && pacienteValido(pacienteId) && choferValido(request.resource.data.choferId) && request.resource.data.keys().hasOnly(['viajeId','choferId','choferNombre','fecha','hora','estado','asignadoEn','asignadoPor','historial']) && request.resource.data.estado == 'asignado' && texto(request.resource.data.viajeId,128) && request.resource.data.asignadoPor == request.auth.uid && request.resource.data.choferNombre == perfilDe(request.resource.data.choferId).nombre && request.resource.data.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && request.resource.data.hora.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$') && (!exists(/databases/$(database)/documents/viajes/$(pacienteId)) || (resource.data.estado in ['asignado','finalizado','cancelado'] && getAfter(/databases/$(database)/documents/historial_viajes/$(resource.data.viajeId)).data.viajeId == resource.data.viajeId));
+   allow update: if cambiaViaje('choferId',resource.data.viajeId);
+  }
+  match /solicitudes/{id} {
+   allow read: if esAdmin() || (activo() && resource.data.pacienteId == request.auth.uid) || (esConductor() && (resource.data.conductorId == request.auth.uid || resource.data.estado == 'solicitado'));
+   allow create: if activo() && perfil().rol == 'paciente' && request.resource.data.keys().hasOnly(['pacienteId','conductorId','estado','creadoEn','historial','origen','destino','necesidades','notas']) && request.resource.data.pacienteId == request.auth.uid && request.resource.data.conductorId == null && request.resource.data.estado == 'solicitado' && request.resource.data.historial == [] && punto(request.resource.data.origen) && punto(request.resource.data.destino) && request.resource.data.necesidades.keys().hasOnly(['sillaRuedas','acompanante']) && request.resource.data.necesidades.sillaRuedas is bool && request.resource.data.necesidades.acompanante is bool && request.resource.data.notas is string && request.resource.data.notas.size() <= 500;
+   allow update: if esConductor() && resource.data.estado == 'solicitado' && resource.data.conductorId == null && request.resource.data.estado == 'asignado' && request.resource.data.conductorId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','conductorId','historial']) && historialValido();
+   allow update: if cambiaViaje('conductorId',id);
+  }
+  match /respuestas_paciente/{uid} {
+   allow read: if esAdmin() || esDueno(uid) || conductorDelPaciente(uid);
+   allow write: if esAdmin() || (esDueno(uid) && perfil().rol == 'paciente');
+  }
+  match /historial_viajes/{id} {
+   allow read: if esAdmin();
+   function fuente() { return getAfter(/databases/$(database)/documents/$(request.resource.data.origenColeccion)/$(request.resource.data.origenId)).data; }
+   allow create: if esAdmin() || (esConductor() && request.resource.data.origenColeccion in ['viajes','solicitudes'] && fuente().estado in ['finalizado','cancelado'] && request.resource.data.estadoFinal == fuente().estado && ((request.resource.data.origenColeccion == 'viajes' && fuente().choferId == request.auth.uid && id == fuente().viajeId) || (request.resource.data.origenColeccion == 'solicitudes' && fuente().conductorId == request.auth.uid && id == request.resource.data.origenId)) && request.resource.data.historial == fuente().historial && request.resource.data.diff(fuente()).affectedKeys().hasOnly(['origenColeccion','origenId','pacienteId','conductorNombre','estadoFinal','archivadoEn']) && request.resource.data.pacienteId == (request.resource.data.origenColeccion == 'viajes' ? request.resource.data.origenId : fuente().pacienteId));
+  }
+  match /ubicaciones/{uid} {
+   function autorizado() {
+    let d = resource.data;
+    let viaje = get(/databases/$(database)/documents/$(d.coleccion)/$(d.id)).data;
+    return activo() && d.pacienteAutorizado == request.auth.uid && d.coleccion in ['viajes','solicitudes'] && viaje.estado in ['asignado','conductor_en_camino','conductor_llego','en_viaje'] && ((d.coleccion == 'viajes' && d.id == request.auth.uid && viaje.choferId == uid && viaje.viajeId == d.viajeAutorizado) || (d.coleccion == 'solicitudes' && viaje.pacienteId == request.auth.uid && viaje.conductorId == uid && d.id == d.viajeAutorizado));
+   }
+   allow read: if esAdmin() || (esConductor() && uid == request.auth.uid) || autorizado();
+   allow create,update: if esConductor() && uid == request.auth.uid && request.resource.data.keys().hasOnly(['lat','lng','timestamp','actualizadoEn','coleccion','id','pacienteAutorizado','viajeAutorizado']) && request.resource.data.lat is number && request.resource.data.lng is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90 && request.resource.data.lng >= -180 && request.resource.data.lng <= 180 && request.resource.data.timestamp is int && request.resource.data.timestamp <= request.time.toMillis()+60000 && request.resource.data.timestamp >= request.time.toMillis()-120000 && request.resource.data.actualizadoEn == request.time;
+  }
+  match /gps_viajes/{id} {
+   function dueno(d) {
+    let viaje = get(/databases/$(database)/documents/$(d.origenColeccion)/$(d.origenId)).data;
+    return esConductor() && d.conductorId == request.auth.uid && d.origenColeccion in ['viajes','solicitudes'] && viaje.estado == 'en_viaje' && ((d.origenColeccion == 'viajes' && viaje.choferId == request.auth.uid && viaje.viajeId == id) || (d.origenColeccion == 'solicitudes' && viaje.conductorId == request.auth.uid && id == d.origenId));
+   }
+   allow read: if esAdmin() || (esConductor() && (!exists(/databases/$(database)/documents/gps_viajes/$(id)) || resource.data.conductorId == request.auth.uid));
+   allow create,update: if dueno(request.resource.data) && request.resource.data.keys().hasOnly(['conductorId','origenColeccion','origenId','conteo','primerTs','ultimoTs']) && request.resource.data.conteo is int && request.resource.data.conteo > 0 && request.resource.data.conteo <= 5000 && (!exists(/databases/$(database)/documents/gps_viajes/$(id)) || (request.resource.data.conteo >= resource.data.conteo && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['conteo','primerTs','ultimoTs'])));
+   match /muestras/{t} {
+    allow read: if esAdmin() || (esConductor() && (!exists(/databases/$(database)/documents/gps_viajes/$(id)) || get(/databases/$(database)/documents/gps_viajes/$(id)).data.conductorId == request.auth.uid));
+    allow create: if dueno(getAfter(/databases/$(database)/documents/gps_viajes/$(id)).data) && request.resource.data.keys().hasOnly(['lat','lng','t','fase','fuente']) && request.resource.data.lat is number && request.resource.data.lng is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90 && request.resource.data.lng >= -180 && request.resource.data.lng <= 180 && request.resource.data.t is int && request.resource.data.t >= request.time.toMillis()-28800000 && request.resource.data.t <= request.time.toMillis()+60000 && request.resource.data.fase == 'en_viaje' && request.resource.data.fuente == 'gps';
+   }
+  }
+  match /{document=**} { allow read,write: if false; }
+ }
+}

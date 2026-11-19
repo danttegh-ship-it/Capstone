@@ -1,6 +1,7 @@
+import '../services/errores_viaje.dart';
+import '../services/operaciones_app.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 /// Panel de administrador para gestionar conductores (puntos 9.4, 13.11
 /// del requerimiento): aprobar choferes que se registraron con sus datos
@@ -63,39 +64,37 @@ class _TarjetaConductor extends StatefulWidget {
 }
 
 class _TarjetaConductorState extends State<_TarjetaConductor> {
-  final _functions = FirebaseFunctions.instanceFor(
-    region: 'southamerica-east1',
-  );
   bool _procesando = false;
   String? _error;
 
   Future<void> _aprobar() async {
+    if (_procesando) return;
     setState(() {
       _procesando = true;
       _error = null;
     });
     try {
-      await _functions
-          .httpsCallable('aprobarConductor')
-          .call<Map<String, dynamic>>({'uid': widget.uid});
+      await OperacionesApp.ejecutar('aprobarConductor', {'uid': widget.uid});
     } catch (e) {
-      setState(() => _error = 'No se pudo aprobar: $e');
+      if (mounted) setState(() => _error = mensajeErrorViaje(e));
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
   }
 
   Future<void> _cambiarActivo(bool activo) async {
+    if (_procesando) return;
     setState(() {
       _procesando = true;
       _error = null;
     });
     try {
-      await _functions
-          .httpsCallable('activarDesactivarCuenta')
-          .call<Map<String, dynamic>>({'uid': widget.uid, 'activo': activo});
+      await OperacionesApp.ejecutar('activarDesactivarCuenta', {
+        'uid': widget.uid,
+        'activo': activo,
+      });
     } catch (e) {
-      setState(() => _error = 'No se pudo actualizar: $e');
+      if (mounted) setState(() => _error = mensajeErrorViaje(e));
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -136,7 +135,7 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
                   )
                 else if (!activo)
                   const Chip(
-                    label: Text('Desactivado'),
+                    label: Text('Bloqueado'),
                     backgroundColor: Color(0xFFFFE0E0),
                   )
                 else
@@ -179,7 +178,9 @@ class _TarjetaConductorState extends State<_TarjetaConductor> {
                             ? (reintentar
                                   ? 'Reintentar operación'
                                   : 'Operación en curso')
-                            : (activo ? 'Desactivar' : 'Reactivar'),
+                            : (activo
+                                  ? 'Bloquear acceso'
+                                  : 'Desbloquear acceso'),
                       ),
                     ),
                   ),

@@ -1,6 +1,6 @@
+import '../services/operaciones_app.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/controles_viaje.dart';
 import '../services/seguimiento_gps.dart';
@@ -48,9 +48,7 @@ class SolicitudesChoferScreen extends StatelessWidget {
                           if (nuevoEstado == 'finalizado') {
                             await SeguimientoGps.prepararCierre(doc.id);
                           }
-                          await FirebaseFunctions.instanceFor(
-                            region: 'southamerica-east1',
-                          ).httpsCallable(accion).call<Map<String, dynamic>>({
+                          await OperacionesApp.ejecutar(accion, {
                             'solicitudId': doc.id,
                             'coleccion': 'solicitudes',
                             'id': doc.id,

@@ -1,4 +1,4 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import '../services/operaciones_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -147,7 +147,7 @@ class _SolicitarTrasladoState extends State<SolicitarTrasladoScreen> {
       if (widget.crear != null) {
         await widget.crear!(datos);
       } else {
-        await FirebaseFunctions.instanceFor(region: 'southamerica-east1').httpsCallable('crearSolicitudViaje').call<Map<String, dynamic>>(datos);
+        await OperacionesApp.ejecutar('crearSolicitudViaje', datos);
       }
       if (mounted) {
         setState(

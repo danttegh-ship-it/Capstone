@@ -1,6 +1,8 @@
+import '../services/errores_viaje.dart';
+import '../services/operaciones_app.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import 'admin_conductores_screen.dart';
@@ -25,9 +27,6 @@ class AdminHome extends StatefulWidget {
 
 class _AdminHomeState extends State<AdminHome> {
   final _firestore = FirebaseFirestore.instance;
-  final _functions = FirebaseFunctions.instanceFor(
-    region: 'southamerica-east1',
-  );
 
   // ---------------------------------------------------------------------
   // Acciones: sesión y pacientes
@@ -49,21 +48,21 @@ class _AdminHomeState extends State<AdminHome> {
   // Functions agregarPaciente / modificarPaciente / eliminarPaciente en
   // vez de escribir Firestore directo como antes. La UI no cambia.
   Future<void> _agregarPaciente(String uid, String nombre) async {
-    final callable = _functions.httpsCallable('agregarPaciente');
-    await callable.call<Map<String, dynamic>>({'uid': uid, 'nombre': nombre});
+    await OperacionesApp.ejecutar('agregarPaciente', {
+      'uid': uid,
+      'nombre': nombre,
+    });
   }
 
   Future<void> _modificarNombre(String uid, String nuevoNombre) async {
-    final callable = _functions.httpsCallable('modificarPaciente');
-    await callable.call<Map<String, dynamic>>({
+    await OperacionesApp.ejecutar('modificarPaciente', {
       'uid': uid,
       'nombre': nuevoNombre,
     });
   }
 
   Future<void> _eliminarPaciente(String uid) async {
-    final callable = _functions.httpsCallable('eliminarPaciente');
-    await callable.call<Map<String, dynamic>>({'uid': uid});
+    await OperacionesApp.ejecutar('eliminarPaciente', {'uid': uid});
   }
 
   // ---------------------------------------------------------------------
@@ -85,8 +84,7 @@ class _AdminHomeState extends State<AdminHome> {
     required DateTime fecha,
     required TimeOfDay hora,
   }) async {
-    final callable = _functions.httpsCallable('asignarViaje');
-    await callable.call<Map<String, dynamic>>({
+    await OperacionesApp.ejecutar('asignarViaje', {
       'pacienteId': pacienteId,
       'choferId': choferId,
       'fecha':
@@ -99,6 +97,20 @@ class _AdminHomeState extends State<AdminHome> {
   // ---------------------------------------------------------------------
   // Diálogos (formularios emergentes)
   // ---------------------------------------------------------------------
+
+  Future<bool> _accionPaciente(Future<void> Function() accion) async {
+    try {
+      await accion();
+      return true;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(mensajeErrorViaje(e))));
+      }
+      return false;
+    }
+  }
 
   void _mostrarDialogoAgregar() {
     final uidController = TextEditingController();
@@ -135,7 +147,9 @@ class _AdminHomeState extends State<AdminHome> {
               final nombre = nombreController.text.trim();
               if (uid.isEmpty || nombre.isEmpty) return;
 
-              await _agregarPaciente(uid, nombre);
+              if (!await _accionPaciente(() => _agregarPaciente(uid, nombre))) {
+                return;
+              }
 
               if (dialogContext.mounted) Navigator.of(dialogContext).pop();
             },
@@ -167,7 +181,11 @@ class _AdminHomeState extends State<AdminHome> {
               final nuevoNombre = nombreController.text.trim();
               if (nuevoNombre.isEmpty) return;
 
-              await _modificarNombre(uid, nuevoNombre);
+              if (!await _accionPaciente(
+                () => _modificarNombre(uid, nuevoNombre),
+              )) {
+                return;
+              }
 
               if (dialogContext.mounted) Navigator.of(dialogContext).pop();
             },
@@ -184,9 +202,9 @@ class _AdminHomeState extends State<AdminHome> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('¿Eliminar paciente?'),
         content: Text(
-          'Se eliminará a "$nombre" de la lista de la app.\n\n'
-          'Esto NO elimina su cuenta de acceso; si también quieres '
-          'quitarle el acceso, hazlo manualmente en Firebase Authentication.',
+          OperacionesApp.usaSpark
+              ? 'Se retirara a "$nombre" de la lista y se bloqueara su acceso a los datos. El historial y la cuenta de Authentication se conservan.'
+              : 'Se eliminara a "$nombre" de la lista de la app. Su cuenta de Authentication se conserva.',
         ),
         actions: [
           TextButton(
@@ -196,7 +214,7 @@ class _AdminHomeState extends State<AdminHome> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await _eliminarPaciente(uid);
+              if (!await _accionPaciente(() => _eliminarPaciente(uid))) return;
               if (dialogContext.mounted) Navigator.of(dialogContext).pop();
             },
             child: const Text('Eliminar'),
@@ -338,16 +356,12 @@ class _AdminHomeState extends State<AdminHome> {
                         if (dialogContext.mounted) {
                           Navigator.of(dialogContext).pop();
                         }
-                      } on FirebaseFunctionsException catch (e) {
+                      } catch (e) {
                         // El servidor puede rechazar la asignacion (chofer
                         // no aprobado, viaje en curso, datos invalidos...).
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              e.message ?? 'No se pudo asignar el viaje.',
-                            ),
-                          ),
+                          SnackBar(content: Text(mensajeErrorViaje(e))),
                         );
                       }
                     },
@@ -417,7 +431,9 @@ class _AdminHomeState extends State<AdminHome> {
           return Center(child: Text('Error al cargar: ${snapshot.error}'));
         }
 
-        final documentos = snapshot.data?.docs ?? [];
+        final documentos = (snapshot.data?.docs ?? [])
+            .where((d) => d.data()['eliminado'] != true)
+            .toList();
 
         if (documentos.isEmpty) {
           return const Center(
