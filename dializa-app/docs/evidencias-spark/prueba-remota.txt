@@ -1,0 +1,9 @@
+OK solicitud creada por paciente y visible para conductor
+OK aceptar, en camino, llego, en viaje, finalizar y archivo atomico
+OK edicion administrativa de paciente
+OK asignacion administrativa visible para conductor
+[2026-11-19T06:01:16.615Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x3ee982be error. Code: 7 Message: 7 PERMISSION_DENIED: Missing or insufficient permissions.
+OK bloqueo sin borrado, rechazo de operacion bloqueada y desbloqueo
+OK baja logica del paciente impide acceso a viajes
+RESULTADO: pruebas remotas correctas en dializa-pruebas
+Limpieza de registros y cuentas QA temporales completada

@@ -1,0 +1,226 @@
+00:00 +0: loading <WORKSPACE>/work/entrega-capstone/dializa-app/test/cola_gps_test.dart
+00:00 +0: <WORKSPACE>/work/entrega-capstone/dializa-app/test/cola_gps_test.dart: H08 fallo de envio conserva lote y reintento es idempotente por timestamp
+00:00 +1: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +2: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +3: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +4: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +5: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +6: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +7: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +8: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:00 +9: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:01 +10: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:01 +11: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:01 +12: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:02 +13: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:02 +14: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:02 +15: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:03 +16: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:03 +17: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:03 +18: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+00:03 +19: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2452.png
+00:03 +20: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: seleccion de punto permite zoom con botones y desplazar mapa
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2454.png
+ClientException: Request to https://tile.openstreetmap.org/13/2487/4904.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2487/4904.png
+ClientException: Request to https://tile.openstreetmap.org/13/2488/4904.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2488/4904.png
+ClientException: Request to https://tile.openstreetmap.org/13/2487/4903.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2487/4903.png
+ClientException: Request to https://tile.openstreetmap.org/13/2488/4903.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2488/4903.png
+ClientException: Request to https://tile.openstreetmap.org/13/2487/4905.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2487/4905.png
+ClientException: Request to https://tile.openstreetmap.org/13/2488/4905.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2488/4905.png
+ClientException: Request to https://tile.openstreetmap.org/13/2486/4904.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2486/4904.png
+ClientException: Request to https://tile.openstreetmap.org/13/2489/4904.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2489/4904.png
+ClientException: Request to https://tile.openstreetmap.org/13/2486/4903.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2486/4903.png
+ClientException: Request to https://tile.openstreetmap.org/13/2489/4903.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2489/4903.png
+ClientException: Request to https://tile.openstreetmap.org/13/2486/4905.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2486/4905.png
+ClientException: Request to https://tile.openstreetmap.org/13/2489/4905.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2489/4905.png
+ClientException: Request to https://tile.openstreetmap.org/13/2487/4902.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2487/4902.png
+ClientException: Request to https://tile.openstreetmap.org/13/2488/4902.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2488/4902.png
+ClientException: Request to https://tile.openstreetmap.org/13/2487/4906.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2487/4906.png
+ClientException: Request to https://tile.openstreetmap.org/13/2488/4906.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2488/4906.png
+ClientException: Request to https://tile.openstreetmap.org/13/2486/4902.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2486/4902.png
+ClientException: Request to https://tile.openstreetmap.org/13/2489/4902.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2489/4902.png
+ClientException: Request to https://tile.openstreetmap.org/13/2485/4904.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2485/4904.png
+ClientException: Request to https://tile.openstreetmap.org/13/2490/4904.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2490/4904.png
+ClientException: Request to https://tile.openstreetmap.org/13/2486/4906.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2486/4906.png
+ClientException: Request to https://tile.openstreetmap.org/13/2489/4906.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2489/4906.png
+ClientException: Request to https://tile.openstreetmap.org/13/2485/4903.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2485/4903.png
+ClientException: Request to https://tile.openstreetmap.org/13/2490/4903.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2490/4903.png
+ClientException: Request to https://tile.openstreetmap.org/13/2485/4905.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2485/4905.png
+ClientException: Request to https://tile.openstreetmap.org/13/2490/4905.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2490/4905.png
+ClientException: Request to https://tile.openstreetmap.org/13/2485/4902.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2485/4902.png
+ClientException: Request to https://tile.openstreetmap.org/13/2490/4902.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2490/4902.png
+ClientException: Request to https://tile.openstreetmap.org/13/2485/4906.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2485/4906.png
+ClientException: Request to https://tile.openstreetmap.org/13/2490/4906.png failed with status 400: ., uri=https://tile.openstreetmap.org/13/2490/4906.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1243/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1243/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1244/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1244/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2452.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2452.png
+ClientException: Request to https://tile.openstreetmap.org/12/1242/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1242/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1245/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1245/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2451.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2451.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2453.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2453.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2450.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2450.png
+ClientException: Request to https://tile.openstreetmap.org/12/1241/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1241/2454.png
+ClientException: Request to https://tile.openstreetmap.org/12/1246/2454.png failed with status 400: ., uri=https://tile.openstreetmap.org/12/1246/2454.png
+00:04 +21: <WORKSPACE>/work/entrega-capstone/dializa-app/test/ficha_historial_test.dart: ficha archivada muestra el motivo y la secuencia de estados
+00:04 +22: <WORKSPACE>/work/entrega-capstone/dializa-app/test/ficha_historial_test.dart: ficha archivada muestra el motivo y la secuencia de estados
+00:04 +23: <WORKSPACE>/work/entrega-capstone/dializa-app/test/ficha_historial_test.dart: ficha archivada muestra el motivo y la secuencia de estados
+00:04 +23: <WORKSPACE>/work/entrega-capstone/dializa-app/test/controles_mapa_test.dart: mapa sigue, permite explorar y se retira al revocar el acceso
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19612.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19612.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19612.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19612.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19611.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19611.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19611.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19611.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19613.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19613.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19613.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19613.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19612.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19612.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19612.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19612.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19611.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19611.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19611.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19611.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19613.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19613.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19613.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19613.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19610.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19610.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19610.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19610.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19614.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19614.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19614.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19614.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19610.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19610.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19610.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19610.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19612.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19612.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19612.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19612.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19614.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19614.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19614.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19614.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19611.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19611.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19611.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19611.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19613.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19613.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19613.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19613.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19610.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19610.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19610.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19610.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19614.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19614.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19614.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19614.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19623.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19623.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19623.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19623.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19622.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19622.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19622.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19622.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19624.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19624.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19624.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19624.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19623.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19623.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19623.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19623.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19622.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19622.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19622.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19622.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19624.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19624.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19624.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19624.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19621.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19621.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19621.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19621.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19625.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19625.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19625.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19625.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19621.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19621.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19621.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19621.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19623.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19623.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19623.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19623.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19625.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19625.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19625.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19625.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19622.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19622.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19622.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19622.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19624.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19624.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19624.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19624.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19621.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19621.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19621.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19621.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19625.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19625.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19625.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19625.png
+ClientException: Request to https://tile.openstreetmap.org/15/9954/19623.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9954/19623.png
+ClientException: Request to https://tile.openstreetmap.org/15/9954/19622.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9954/19622.png
+ClientException: Request to https://tile.openstreetmap.org/15/9954/19624.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9954/19624.png
+ClientException: Request to https://tile.openstreetmap.org/15/9954/19621.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9954/19621.png
+ClientException: Request to https://tile.openstreetmap.org/15/9954/19625.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9954/19625.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19634.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19634.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19634.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19634.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19633.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19633.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19633.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19633.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19635.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19635.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19635.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19635.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19634.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19634.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19634.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19634.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19633.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19633.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19633.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19633.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19635.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19635.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19635.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19635.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19632.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19632.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19632.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19632.png
+ClientException: Request to https://tile.openstreetmap.org/15/9957/19636.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9957/19636.png
+ClientException: Request to https://tile.openstreetmap.org/15/9958/19636.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9958/19636.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19632.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19632.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19632.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19632.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19634.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19634.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19634.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19634.png
+ClientException: Request to https://tile.openstreetmap.org/15/9956/19636.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9956/19636.png
+ClientException: Request to https://tile.openstreetmap.org/15/9959/19636.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9959/19636.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19633.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19633.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19633.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19633.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19635.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19635.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19635.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19635.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19632.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19632.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19632.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19632.png
+ClientException: Request to https://tile.openstreetmap.org/15/9955/19636.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9955/19636.png
+ClientException: Request to https://tile.openstreetmap.org/15/9960/19636.png failed with status 400: ., uri=https://tile.openstreetmap.org/15/9960/19636.png
+00:04 +24: <WORKSPACE>/work/entrega-capstone/dializa-app/test/ficha_historial_test.dart: ficha archivada muestra el motivo y la secuencia de estados
+00:06 +25: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:07 +26: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud valida manda origen destino y necesidades una sola vez
+00:07 +27: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: seleccion resuelve direccion y fallo permite escribir sin conservar calle anterior
+00:08 +28: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 solicitud sin direcciones no llama al backend
+00:08 +29: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 pendiente solo ofrece Aceptar y evita doble llamada
+00:08 +30: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 Rechazar solo despues de aceptar y antes de iniciar: asignado
+00:08 +31: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 Rechazar solo despues de aceptar y antes de iniciar: en_viaje
+00:08 +32: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente autorizada
+00:08 +33: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente otra-instancia
+00:08 +34: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente vencida
+00:09 +35: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 ubicacion paciente antigua
+00:09 +36: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 publicaciones serializadas y pausa invalida las pendientes
+00:09 +37: <WORKSPACE>/work/entrega-capstone/dializa-app/test/pantallas_traslado_test.dart: T7 resumen distingue muestras observadas de ausencia de GPS
+00:09 +38: All tests passed!

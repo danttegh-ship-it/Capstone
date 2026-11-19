@@ -1,0 +1,104 @@
+
+
+  Spark: operaciones con roles y transiciones verificadas
+    √ rechazar despues de aceptar devuelve la solicitud a pendientes y libera disponibilidad (340ms)
+    √ paciente crea solicitud propia; el chofer la consulta y solo uno acepta (185ms)
+[2026-11-19T05:58:06.963Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985837 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L51, false for 'create' @ L86, false for 'update' @ L52, evaluation error at L53:21 for 'update' @ L53, false for 'update' @ L54, false for 'update' @ L86, false for 'create' @ L51, false for 'create' @ L86
+[2026-11-19T05:58:06.985Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798582b error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L51, false for 'create' @ L86, false for 'update' @ L52, false for 'update' @ L53, false for 'update' @ L54, false for 'update' @ L86
+[2026-11-19T05:58:07.026Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798582c error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L52:21 for 'update' @ L52, evaluation error at L53:21 for 'update' @ L53, evaluation error at L54:21 for 'update' @ L54, false for 'update' @ L86, false for 'update' @ L52, false for 'update' @ L53, false for 'update' @ L54, false for 'update' @ L86
+    √ no permite suplantar pacientes, asignarse conductor ni modificar datos de una solicitud al aceptar (187ms)
+[2026-11-19T05:58:07.413Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798583e error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L41:21 for 'create' @ L41, false for 'create' @ L86, evaluation error at L42:21 for 'update' @ L42, false for 'update' @ L86, false for 'update' @ L42, false for 'update' @ L86
+[2026-11-19T05:58:07.465Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985838 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L34:21 for 'update' @ L34, false for 'update' @ L86, false for 'update' @ L34, false for 'update' @ L86
+[2026-11-19T05:58:07.479Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798583c error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'delete' @ L86
+    √ admin edita paciente y bloquea/reactiva conductor sin borrarlo; otros roles no (172ms)
+[2026-11-19T05:58:07.673Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798583f error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L46:28 for 'update' @ L46, evaluation error at L47:21 for 'update' @ L47, false for 'update' @ L86, false for 'update' @ L46, false for 'update' @ L47, false for 'update' @ L86
+[2026-11-19T05:58:07.691Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985843 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L46:28 for 'update' @ L46, evaluation error at L47:21 for 'update' @ L47, false for 'update' @ L86, false for 'update' @ L46, false for 'update' @ L47, false for 'update' @ L86
+[2026-11-19T05:58:07.766Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985844 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L46:28 for 'update' @ L46, evaluation error at L47:21 for 'update' @ L47, false for 'update' @ L86, false for 'update' @ L46, Service call error. Function: [getAfter], Argument: [path_value {
+  segments {
+    simple: "databases"
+  }
+  segments {
+    simple: "(default)"
+  }
+  segments {
+    simple: "documents"
+  }
+  segments {
+    simple: "historial_viajes"
+  }
+  segments {
+    simple: "v1"
+  }
+}
+]. for 'update' @ L47, false for 'update' @ L86
+    √ asigna viaje, rechaza saltos/otro conductor y exige archivo al finalizar (187ms)
+[2026-11-19T05:58:08.046Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985849 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L72, false for 'create' @ L86, false for 'update' @ L72, false for 'update' @ L86
+    √ ubicacion idle solo admin/dueno; paciente asignado lee y pierde acceso al cancelar (243ms)
+[2026-11-19T05:58:08.553Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985850 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L83:22 for 'create' @ L83, false for 'create' @ L86, false for 'update' @ L86, false for 'create' @ L83, false for 'create' @ L86
+[2026-11-19T05:58:08.562Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985845 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L83, false for 'create' @ L86, false for 'update' @ L86
+[2026-11-19T05:58:08.617Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985852 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L83:22 for 'create' @ L83, false for 'create' @ L86, false for 'update' @ L86, false for 'create' @ L83, false for 'create' @ L86
+    √ GPS autentico solo durante el viaje propio; rechaza terceros y timestamps antiguos (162ms)
+
+  H10 privacidad y consultas
+    √ paciente lee su perfil y su viaje, no los de otro (218ms)
+    √ chofer aprobado accede al paciente asignado y a pendientes, no a todos los perfiles (277ms)
+    √ el admin activo puede consultar paneles e historial; desactivado no (223ms)
+    √ tokens y sesiones son privados incluso para admin (279ms)
+[2026-11-19T05:58:10.407Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985878 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L34, false for 'create' @ L49, false for 'update' @ L34, false for 'update' @ L49
+[2026-11-19T05:58:10.434Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985879 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L39, false for 'create' @ L49, false for 'update' @ L39, false for 'update' @ L49
+[2026-11-19T05:58:10.460Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798587a error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L23, false for 'create' @ L49, false for 'update' @ L23, false for 'update' @ L49
+[2026-11-19T05:58:10.490Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798587b error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L45, false for 'create' @ L49, false for 'update' @ L45, false for 'update' @ L49
+[2026-11-19T05:58:10.515Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798587c error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L47, false for 'create' @ L49, false for 'update' @ L47, false for 'update' @ L49
+[2026-11-19T05:58:10.552Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798587d error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L25, false for 'create' @ L49, false for 'update' @ L25, false for 'update' @ L49
+[2026-11-19T05:58:10.575Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798587e error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L34, false for 'create' @ L49, false for 'update' @ L34, false for 'update' @ L49
+[2026-11-19T05:58:10.607Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798587f error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L39, false for 'create' @ L49, false for 'update' @ L39, false for 'update' @ L49
+[2026-11-19T05:58:10.652Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985880 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L23, false for 'create' @ L49, false for 'update' @ L23, false for 'update' @ L49
+[2026-11-19T05:58:10.712Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985881 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L45, false for 'create' @ L49, false for 'update' @ L45, false for 'update' @ L49
+[2026-11-19T05:58:10.746Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985882 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L47, false for 'create' @ L49, false for 'update' @ L47, false for 'update' @ L49
+[2026-11-19T05:58:10.791Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985883 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L25, false for 'create' @ L49, false for 'update' @ L25, false for 'update' @ L49
+[2026-11-19T05:58:10.823Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985884 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L34, false for 'create' @ L49, false for 'update' @ L34, false for 'update' @ L49
+[2026-11-19T05:58:10.851Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985885 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L39, false for 'create' @ L49, false for 'update' @ L39, false for 'update' @ L49
+[2026-11-19T05:58:10.883Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985886 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L23, false for 'create' @ L49, false for 'update' @ L23, false for 'update' @ L49
+[2026-11-19T05:58:10.903Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985887 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L45, false for 'create' @ L49, false for 'update' @ L45, false for 'update' @ L49
+[2026-11-19T05:58:10.927Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985888 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L47, false for 'create' @ L49, false for 'update' @ L47, false for 'update' @ L49
+[2026-11-19T05:58:10.965Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x87985889 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L25, false for 'create' @ L49, false for 'update' @ L25, false for 'update' @ L49
+[2026-11-19T05:58:11.026Z]  @firebase/firestore: Firestore (10.14.1): GrpcConnection RPC 'Write' stream 0x8798588b error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L43:20 for 'create' @ L43, false for 'create' @ L49, evaluation error at L43:20 for 'update' @ L43, false for 'update' @ L49, false for 'update' @ L43, false for 'update' @ L49
+    √ ningun cliente escribe estado o permisos; paciente conserva asistencia propia (639ms)
+    √ usuario sin perfil y anonimato no leen viajes (62ms)
+    √ T7 consultas de solicitudes propias, aceptadas e historial paginado (275ms)
+
+
+  14 passing (7s)
+
