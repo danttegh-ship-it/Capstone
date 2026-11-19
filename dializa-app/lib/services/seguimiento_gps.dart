@@ -74,6 +74,7 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
   int _ultimaPublicacion = 0;
   int _revision = 0, _sensorGeneracion = 0;
   bool _acumulando = false;
+  bool _permisoSolicitado = false;
   final _db = FirebaseFirestore.instance;
   final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
   _consultas = [];
@@ -139,6 +140,14 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
         );
       }
       _timer = Timer.periodic(const Duration(seconds: 15), (_) {
+        if (OperacionesApp.usaSpark &&
+            _posiciones == null &&
+            !_iniciando &&
+            _activo &&
+            !_cerrado &&
+            _cierreId == null) {
+          unawaited(_reconciliar());
+        }
         unawaited(_enviar());
       });
     } catch (_) {
@@ -228,7 +237,8 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
         throw StateError('Activa el GPS del dispositivo.');
       }
       var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
+      if (permission == LocationPermission.denied && !_permisoSolicitado) {
+        _permisoSolicitado = true;
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied ||
@@ -350,7 +360,11 @@ class SeguimientoGps extends ChangeNotifier with WidgetsBindingObserver {
     _enviando = true;
     try {
       await cola.flush();
-      _mensaje('GPS: ${cola.pendientes} muestras pendientes.');
+      if (cola.pendientes > 0 ||
+          cola.enCuarentena > 0 ||
+          !OperacionesApp.usaSpark) {
+        _mensaje('GPS: ${cola.pendientes} muestras pendientes.');
+      }
     } catch (_) {
       _mensaje(
         'GPS pendiente de envio (${cola.pendientes}). Revisa la conexion antes de finalizar.',
