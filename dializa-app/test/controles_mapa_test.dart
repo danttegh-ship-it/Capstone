@@ -1,12 +1,31 @@
 import 'dart:async';
 
 import 'package:dializa_app/screens/ubicacion_paciente_screen.dart';
+import 'package:dializa_app/screens/solicitar_traslado_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
 void main() {
+  testWidgets('seleccion de punto permite zoom con botones y desplazar mapa', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ElegirPuntoScreen(titulo: 'Origen')));
+    await tester.pumpAndSettle();
+    final mapa = find.byType(FlutterMap);
+    final controlador = tester.widget<FlutterMap>(mapa).mapController!;
+    final zoom = controlador.camera.zoom;
+    await tester.tap(find.byTooltip('Acercar'));
+    await tester.pumpAndSettle();
+    expect(controlador.camera.zoom, zoom + 1);
+    await tester.tap(find.byTooltip('Alejar'));
+    await tester.pumpAndSettle();
+    expect(controlador.camera.zoom, zoom);
+    final centro = controlador.camera.center;
+    await tester.drag(mapa, const Offset(100,0));
+    await tester.pumpAndSettle();
+    expect(controlador.camera.center, isNot(centro));
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets('mapa sigue, permite explorar y se retira al revocar el acceso', (
     tester,
   ) async {

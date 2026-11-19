@@ -1,15 +1,22 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/geoapify_service.dart';
 import '../services/errores_viaje.dart';
 import '../services/ubicacion_actual.dart';
+import '../services/direccion_service.dart';
 
 class SolicitarTrasladoScreen extends StatefulWidget {
-  const SolicitarTrasladoScreen({super.key, this.crear, this.elegir});
+  const SolicitarTrasladoScreen({
+    super.key,
+    this.crear,
+    this.elegir,
+    this.resolver,
+  });
   final Future<String> Function(Map<String, dynamic>)? crear;
   final Future<PuntoMapa?> Function(String)? elegir;
+  final Future<String?> Function(PuntoMapa)? resolver;
   @override
   State<SolicitarTrasladoScreen> createState() => _SolicitarTrasladoState();
 }
@@ -24,6 +31,23 @@ class _SolicitarTrasladoState extends State<SolicitarTrasladoScreen> {
       _enviando = false,
       _eligiendo = false;
   String? _mensaje;
+  Future<void> _direccion(PuntoMapa punto, bool origen) async {
+    String? texto;
+    try {
+      texto = await (widget.resolver ?? DireccionService().resolver)(punto);
+    } catch (_) {
+      // La seleccion se conserva si el geocodificador no tiene cobertura.
+    }
+    if (!mounted) return;
+    setState(() {
+      final campo = origen ? _origen : _destino;
+      campo.text = texto ?? '';
+      _mensaje = texto == null
+          ? 'Punto guardado. No se encontro la calle; escribe su direccion.'
+          : null;
+    });
+  }
+
   @override
   void dispose() {
     _origen.dispose();
@@ -52,6 +76,7 @@ class _SolicitarTrasladoState extends State<SolicitarTrasladoScreen> {
             _puntoDestino = punto;
           }
         });
+        await _direccion(punto, origen);
       }
     } catch (_) {
       if (mounted) {
@@ -78,6 +103,9 @@ class _SolicitarTrasladoState extends State<SolicitarTrasladoScreen> {
               'No se pudo obtener tu ubicacion. Elige el origen en el mapa.';
         }
       });
+      if (ubicacion is UbicacionExito) {
+        await _direccion(PuntoMapa(ubicacion.lat, ubicacion.lng), true);
+      }
     } catch (_) {
       if (mounted) {
         setState(
@@ -119,9 +147,7 @@ class _SolicitarTrasladoState extends State<SolicitarTrasladoScreen> {
       if (widget.crear != null) {
         await widget.crear!(datos);
       } else {
-        await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
-            .httpsCallable('crearSolicitudViaje')
-            .call<Map<String, dynamic>>(datos);
+        await FirebaseFunctions.instanceFor(region: 'southamerica-east1').httpsCallable('crearSolicitudViaje').call<Map<String, dynamic>>(datos);
       }
       if (mounted) {
         setState(
@@ -227,6 +253,13 @@ class ElegirPuntoScreen extends StatefulWidget {
 
 class _ElegirPuntoState extends State<ElegirPuntoScreen> {
   LatLng? _punto;
+  final _mapa = MapController();
+  @override
+  void dispose() {
+    _mapa.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text('${widget.titulo}: toca el mapa')),
@@ -235,14 +268,20 @@ class _ElegirPuntoState extends State<ElegirPuntoScreen> {
         const Padding(
           padding: EdgeInsets.all(12),
           child: Text(
-            'Mueve el mapa y toca el punto exacto. No se selecciona una direccion automaticamente.',
+            'Arrastra el mapa, usa dos dedos para acercar o alejar y toca el punto exacto.',
           ),
         ),
         Expanded(
           child: FlutterMap(
+            mapController: _mapa,
             options: MapOptions(
               initialCenter: const LatLng(-33.45, -70.66),
               initialZoom: 12,
+              minZoom: 3,
+              maxZoom: 19,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
+              ),
               onTap: (_, p) => setState(() => _punto = p),
             ),
             children: [
@@ -272,14 +311,37 @@ class _ElegirPuntoState extends State<ElegirPuntoScreen> {
           ),
         ),
         SafeArea(
-          child: ElevatedButton(
-            onPressed: _punto == null
-                ? null
-                : () => Navigator.pop(
-                    context,
-                    PuntoMapa(_punto!.latitude, _punto!.longitude),
-                  ),
-            child: const Text('Confirmar punto'),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                tooltip: 'Acercar',
+                onPressed: () => _mapa.move(
+                  _mapa.camera.center,
+                  (_mapa.camera.zoom + 1).clamp(3, 19),
+                ),
+                icon: const Icon(Icons.add),
+              ),
+              IconButton(
+                tooltip: 'Alejar',
+                onPressed: () => _mapa.move(
+                  _mapa.camera.center,
+                  (_mapa.camera.zoom - 1).clamp(3, 19),
+                ),
+                icon: const Icon(Icons.remove),
+              ),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _punto == null
+                      ? null
+                      : () => Navigator.pop(
+                          context,
+                          PuntoMapa(_punto!.latitude, _punto!.longitude),
+                        ),
+                  child: const Text('Confirmar punto'),
+                ),
+              ),
+            ],
           ),
         ),
       ],

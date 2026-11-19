@@ -14,10 +14,13 @@ void main() {
     (tester) async {
       final gate = Completer<String>();
       final enviados = <Map<String, dynamic>>[];
+      var direcciones = 0;
       await tester.pumpWidget(
         MaterialApp(
           home: SolicitarTrasladoScreen(
             elegir: (_) async => const PuntoMapa(-33.4, -70.6),
+            resolver: (_) async =>
+                ++direcciones == 1 ? 'Origen ficticio' : 'Destino ficticio',
             crear: (datos) {
               enviados.add(datos);
               return gate.future;
@@ -53,6 +56,28 @@ void main() {
       gate.complete('solicitud_ficticia');
       await tester.pumpAndSettle();
       expect(find.textContaining('Solicitud enviada.'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'seleccion resuelve direccion y fallo permite escribir sin conservar calle anterior',
+    (tester) async {
+      var intentos = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SolicitarTrasladoScreen(
+            elegir: (_) async => const PuntoMapa(-33.4, -70.6),
+            resolver: (_) async =>
+                ++intentos == 1 ? 'Calle encontrada, Santiago' : null,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Elegir origen en mapa'));
+      await tester.pumpAndSettle();
+      expect(find.text('Calle encontrada, Santiago'), findsOneWidget);
+      await tester.tap(find.text('Origen seleccionado'));
+      await tester.pumpAndSettle();
+      expect(find.text('Calle encontrada, Santiago'), findsNothing);
+      expect(find.textContaining('No se encontro la calle'), findsOneWidget);
     },
   );
   testWidgets('T7 solicitud sin direcciones no llama al backend', (
