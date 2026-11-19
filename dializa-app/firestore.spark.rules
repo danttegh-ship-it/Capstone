@@ -17,13 +17,14 @@ service cloud.firestore {
   function texto(v,n) { return v is string && v.size() > 0 && v.size() <= n; }
   function punto(p) { return p is map && p.keys().hasOnly(['lat','lng','direccion']) && p.lat is number && p.lng is number && p.lat >= -90 && p.lat <= 90 && p.lng >= -180 && p.lng <= 180 && texto(p.direccion,200); }
   function transicion(a,b) { return (a == 'asignado' && b in ['conductor_en_camino','cancelado']) || (a == 'conductor_en_camino' && b in ['conductor_llego','cancelado']) || (a == 'conductor_llego' && b in ['en_viaje','cancelado']) || (a == 'en_viaje' && b == 'finalizado'); }
-  function historialValido() {
+  function historialEntrada(estado) {
    let h = request.resource.data.historial;
    return h is list && h.size() == resource.data.get('historial',[]).size()+1 &&
     h == resource.data.get('historial',[]).concat([h[h.size()-1]]) &&
     h[h.size()-1].keys().hasOnly(['estado','fecha','actorUid']) &&
-    h[h.size()-1].estado == request.resource.data.estado && h[h.size()-1].actorUid == request.auth.uid && h[h.size()-1].fecha is string;
+    h[h.size()-1].estado == estado && h[h.size()-1].actorUid == request.auth.uid && h[h.size()-1].fecha is string;
   }
+  function historialValido() { return historialEntrada(request.resource.data.estado); }
   function cierreArchivado(instancia) { return !(request.resource.data.estado in ['cancelado','finalizado']) || getAfter(/databases/$(database)/documents/historial_viajes/$(instancia)).data.estadoFinal == request.resource.data.estado; }
   function cambiaViaje(conductor,instancia) { return esConductor() && resource.data[conductor] == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','historial']) && transicion(resource.data.estado,request.resource.data.estado) && historialValido() && cierreArchivado(instancia); }
   match /usuarios/{uid} {
@@ -48,7 +49,8 @@ service cloud.firestore {
   match /solicitudes/{id} {
    allow read: if esAdmin() || (activo() && resource.data.pacienteId == request.auth.uid) || (esConductor() && (resource.data.conductorId == request.auth.uid || resource.data.estado == 'solicitado'));
    allow create: if activo() && perfil().rol == 'paciente' && request.resource.data.keys().hasOnly(['pacienteId','conductorId','estado','creadoEn','historial','origen','destino','necesidades','notas']) && request.resource.data.pacienteId == request.auth.uid && request.resource.data.conductorId == null && request.resource.data.estado == 'solicitado' && request.resource.data.historial == [] && punto(request.resource.data.origen) && punto(request.resource.data.destino) && request.resource.data.necesidades.keys().hasOnly(['sillaRuedas','acompanante']) && request.resource.data.necesidades.sillaRuedas is bool && request.resource.data.necesidades.acompanante is bool && request.resource.data.notas is string && request.resource.data.notas.size() <= 500;
-   allow update: if esConductor() && resource.data.estado == 'solicitado' && resource.data.conductorId == null && request.resource.data.estado == 'asignado' && request.resource.data.conductorId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','conductorId','historial']) && historialValido();
+   allow update: if esConductor() && resource.data.estado == 'solicitado' && resource.data.conductorId == null && pacienteValido(resource.data.pacienteId) && get(/databases/$(database)/documents/choferes_privado/$(request.auth.uid)).data.disponible == true && getAfter(/databases/$(database)/documents/choferes_privado/$(request.auth.uid)).data.disponible == false && request.resource.data.estado == 'asignado' && request.resource.data.conductorId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','conductorId','historial']) && historialValido();
+   allow update: if esConductor() && resource.data.estado == 'asignado' && resource.data.conductorId == request.auth.uid && request.resource.data.estado == 'solicitado' && request.resource.data.conductorId == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','conductorId','rechazadoPor','historial']) && !(request.auth.uid in resource.data.get('rechazadoPor',[])) && request.resource.data.rechazadoPor == resource.data.get('rechazadoPor',[]).concat([request.auth.uid]) && historialEntrada('rechazado:sin motivo') && getAfter(/databases/$(database)/documents/choferes_privado/$(request.auth.uid)).data.disponible == true;
    allow update: if cambiaViaje('conductorId',id);
   }
   match /respuestas_paciente/{uid} {

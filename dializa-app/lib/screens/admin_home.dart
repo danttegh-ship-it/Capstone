@@ -43,10 +43,7 @@ class _AdminHomeState extends State<AdminHome> {
     );
   }
 
-  // Punto 10.6: usuarios/{uid} ahora es write:false en firestore.rules,
-  // asi que agregar/modificar/eliminar un paciente pasa por las Cloud
-  // Functions agregarPaciente / modificarPaciente / eliminarPaciente en
-  // vez de escribir Firestore directo como antes. La UI no cambia.
+  // Callables en produccion; transacciones protegidas por reglas en dializa-pruebas.
   Future<void> _agregarPaciente(String uid, String nombre) async {
     await OperacionesApp.ejecutar('agregarPaciente', {
       'uid': uid,
@@ -69,14 +66,7 @@ class _AdminHomeState extends State<AdminHome> {
   // Acciones: asignación de viaje (chofer + hora)
   // ---------------------------------------------------------------------
   //
-  // Fase 1: ya NO se escribe `viajes/{pacienteId}` directo (las reglas lo
-  // prohiben). La Cloud Function `asignarViaje` valida paciente/chofer,
-  // genera el id del viaje, resuelve los nombres en el servidor, ARCHIVA el
-  // viaje anterior en `historial_viajes` y crea el nuevo, todo en una
-  // transaccion. La UI es la misma. `choferNombre` ya no se envia: lo
-  // resuelve el servidor (el parametro se conserva por compatibilidad con
-  // el dialogo existente).
-
+  // Ambos adaptadores validan participantes y conservan la instancia anterior.
   Future<void> _asignarViaje({
     required String pacienteId,
     required String choferId,

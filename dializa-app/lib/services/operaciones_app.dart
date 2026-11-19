@@ -242,10 +242,43 @@ class OperacionesSpark {
             (coleccion == 'viajes' ? previo['viajeId'] : id) != d['viajeId']) {
           fallo('failed-precondition');
         }
+        final disponibilidad = db.collection('choferes_privado').doc(uid);
+        if (accion == 'aceptarSolicitud') {
+          final privado = await tx.get(disponibilidad);
+          if (previo['estado'] != 'solicitado' ||
+              privado.data()?['disponible'] != true) {
+            fallo('failed-precondition');
+          }
+          tx.set(disponibilidad, {
+            'disponible': false,
+          }, SetOptions(merge: true));
+        }
+        if (accion == 'rechazarSolicitud') {
+          final rechazados = [...?previo['rechazadoPor'] as List?];
+          if (previo['estado'] != 'asignado' ||
+              previo['conductorId'] != uid ||
+              rechazados.contains(uid)) {
+            fallo('failed-precondition');
+          }
+          tx.update(ref, {
+            'estado': 'solicitado',
+            'conductorId': null,
+            'rechazadoPor': [...rechazados, uid],
+            'historial': [
+              ...?previo['historial'] as List?,
+              {
+                'estado': 'rechazado:sin motivo',
+                'fecha': ahora,
+                'actorUid': uid,
+              },
+            ],
+          });
+          tx.set(disponibilidad, {'disponible': true}, SetOptions(merge: true));
+          return;
+        }
         final siguiente = accion == 'aceptarSolicitud'
             ? 'asignado'
-            : accion == 'rechazarSolicitud' ||
-                  accion == 'cancelarAsignacionConductor'
+            : accion == 'cancelarAsignacionConductor'
             ? 'cancelado'
             : d['nuevoEstado'];
         final cambios = <String, dynamic>{

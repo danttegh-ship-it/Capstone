@@ -18,10 +18,20 @@ beforeEach(async () => {
   const fixtureDb = ctx.firestore();
   for (const [uid,rol,aprobado,activo] of [['admin','admin',false,true],['paciente','paciente',false,true],['otro','paciente',false,true],['chofer','chofer',true,true],['segundo','chofer',true,true],['bloqueado','chofer',true,false]]) {
    await fixtureDb.doc(`usuarios/${uid}`).set({nombre:uid,rol,aprobado,activo});
+   if(rol==='chofer') await fixtureDb.doc(`choferes_privado/${uid}`).set({disponible:true});
   }
  });
 });
 describe('Spark: operaciones con roles y transiciones verificadas', () => {
+ it('rechazar despues de aceptar devuelve la solicitud a pendientes y libera disponibilidad', async () => {
+  await db('paciente').doc('solicitudes/rechazo').set(solicitud());
+  const c=db('chofer'), ref=c.doc('solicitudes/rechazo');
+  const aceptar=c.batch();aceptar.update(ref,{estado:'asignado',conductorId:'chofer',historial:[hist('asignado')]});aceptar.update(c.doc('choferes_privado/chofer'),{disponible:false});await assertSucceeds(aceptar.commit());
+  const h=[hist('asignado'),hist('rechazado:sin motivo')];
+  const rechazar=c.batch();rechazar.update(ref,{estado:'solicitado',conductorId:null,rechazadoPor:['chofer'],historial:h});rechazar.update(c.doc('choferes_privado/chofer'),{disponible:true});await assertSucceeds(rechazar.commit());
+  assert.equal((await db('segundo').collection('solicitudes').where('estado','==','solicitado').get()).size,1);
+  assert.equal((await c.doc('choferes_privado/chofer').get()).data().disponible,true);
+ });
  it('paciente crea solicitud propia; el chofer la consulta y solo uno acepta', async () => {
   await assertSucceeds(db('paciente').doc('solicitudes/s1').set(solicitud()));
   const pendientes = await assertSucceeds(db('chofer').collection('solicitudes').where('estado','==','solicitado').get());
@@ -30,6 +40,7 @@ describe('Spark: operaciones con roles y transiciones verificadas', () => {
    const ref = db(uid).doc('solicitudes/s1'); const s = await tx.get(ref);
    if (s.data().estado !== 'solicitado') throw Error('ocupada');
    tx.update(ref,{estado:'asignado',conductorId:uid,historial:[hist('asignado',uid)]});
+   tx.update(db(uid).doc('choferes_privado/'+uid),{disponible:false});
   });
   const r = await Promise.allSettled([aceptar('chofer'),aceptar('segundo')]);
   assert.equal(r.filter(x=>x.status==='fulfilled').length,1);
